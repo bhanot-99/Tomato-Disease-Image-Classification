@@ -128,44 +128,6 @@ Tomato-Disease-Classification/
 ├── requirements.txt    # Dependencies
 └── README.md
 ```
-
----
-
-## 🚀 How to Run
-
-### 1. Clone Repository
-
-```bash
-git clone https://github.com/YOUR-USERNAME/YOUR-REPO-NAME.git
-cd YOUR-REPO-NAME
-```
-
-### 2. Install Dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-### 3. Run Training / Inference
-
-```bash
-# Example (modify based on your implementation)
-python train.py
-python predict.py
-```
-
----
-
-## 🧪 Reproducibility Notes
-
-* Ensure dataset is placed in:
-
-  ```
-  /dataset/
-  ```
-* Update paths in code if necessary
-* Recommended to use a virtual environment
-
 ---
 
 ## 🌍 Applications
