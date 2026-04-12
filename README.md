@@ -187,24 +187,3 @@ python predict.py
 
 ---
 
-## 🤝 Contributing
-
-Contributions, issues, and suggestions are welcome.
-
----
-
-## 📜 License
-
-[ADD LICENSE HERE]
-
----
-
-## 👤 Author
-
-**Jatin Bhanot**
-
-* Computer Science Undergraduate (Edge AI, UAV Vision Systems)
-* [ADD LINKEDIN]
-* [ADD GITHUB PROFILE]
-
----
