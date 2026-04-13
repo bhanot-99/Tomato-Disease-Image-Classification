@@ -1,0 +1,1 @@
+python src/severity.py --image leaf.jpg

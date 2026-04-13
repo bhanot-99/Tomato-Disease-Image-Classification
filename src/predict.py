@@ -1,0 +1,1 @@
+python src/predict.py --image my_leaf.jpg
