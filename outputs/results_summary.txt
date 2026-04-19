@@ -1,0 +1,98 @@
+
+Strategy B_segmented — Evaluation
+  Test Accuracy    : 0.8613
+  Test Loss        : 0.4064
+  Classification Report:
+                                      precision    recall  f1-score   support
+
+                      Bacterial spot      0.937     0.787     0.855       150
+                        Early blight      0.855     0.747     0.797       150
+                         Late blight      0.890     0.920     0.905       150
+                           Leaf Mold      0.934     0.790     0.856       143
+                  Septoria leaf spot      0.751     0.907     0.822       150
+Spider mites Two-spotted spider mite      0.876     0.893     0.884       150
+                         Target Spot      0.723     0.853     0.783       150
+       Tomato Yellow Leaf Curl Virus      0.980     0.967     0.973       150
+                 Tomato mosaic virus      0.979     0.821     0.893        56
+                             healthy      0.844     0.900     0.871       150
+
+                            accuracy                          0.861      1399
+                           macro avg      0.877     0.858     0.864      1399
+                        weighted avg      0.870     0.861     0.862      1399
+
+
+Strategy B_segmented — Evaluation
+  Test Accuracy    : 0.8613
+  Test Loss        : 0.4064
+  Classification Report:
+                                      precision    recall  f1-score   support
+
+                      Bacterial spot      0.937     0.787     0.855       150
+                        Early blight      0.855     0.747     0.797       150
+                         Late blight      0.890     0.920     0.905       150
+                           Leaf Mold      0.934     0.790     0.856       143
+                  Septoria leaf spot      0.751     0.907     0.822       150
+Spider mites Two-spotted spider mite      0.876     0.893     0.884       150
+                         Target Spot      0.723     0.853     0.783       150
+       Tomato Yellow Leaf Curl Virus      0.980     0.967     0.973       150
+                 Tomato mosaic virus      0.979     0.821     0.893        56
+                             healthy      0.844     0.900     0.871       150
+
+                            accuracy                          0.861      1399
+                           macro avg      0.877     0.858     0.864      1399
+                        weighted avg      0.870     0.861     0.862      1399
+
+
+Strategy B_segmented — Evaluation
+  Test Accuracy    : 0.8613
+  Test Loss        : 0.4064
+  Classification Report:
+                                      precision    recall  f1-score   support
+
+                      Bacterial spot      0.937     0.787     0.855       150
+                        Early blight      0.855     0.747     0.797       150
+                         Late blight      0.890     0.920     0.905       150
+                           Leaf Mold      0.934     0.790     0.856       143
+                  Septoria leaf spot      0.751     0.907     0.822       150
+Spider mites Two-spotted spider mite      0.876     0.893     0.884       150
+                         Target Spot      0.723     0.853     0.783       150
+       Tomato Yellow Leaf Curl Virus      0.980     0.967     0.973       150
+                 Tomato mosaic virus      0.979     0.821     0.893        56
+                             healthy      0.844     0.900     0.871       150
+
+                            accuracy                          0.861      1399
+                           macro avg      0.877     0.858     0.864      1399
+                        weighted avg      0.870     0.861     0.862      1399
+
+
+Strategy C_segmented
+  Test Accuracy : 0.8694
+  Test Loss     : 0.3728
+  Best Val Acc  : 0.8735
+
+Strategy C_Mixed
+  Test Accuracy : 0.8748
+  Test Loss     : 0.3631
+  Best Val Acc  : 0.8714
+
+Strategy C_Mixed — Evaluation
+  Test Accuracy    : 0.8748
+  Test Loss        : 0.3631
+  Classification Report:
+                                      precision    recall  f1-score   support
+
+                      Bacterial spot      0.925     0.900     0.912       150
+                        Early blight      0.912     0.620     0.738       150
+                         Late blight      0.877     0.947     0.910       150
+                           Leaf Mold      0.885     0.920     0.902       150
+                  Septoria leaf spot      0.798     0.893     0.843       150
+Spider mites Two-spotted spider mite      0.893     0.887     0.890       150
+                         Target Spot      0.693     0.873     0.773       150
+       Tomato Yellow Leaf Curl Virus      0.986     0.907     0.944       150
+                 Tomato mosaic virus      0.972     0.938     0.955       112
+                             healthy      0.917     0.880     0.898       150
+
+                            accuracy                          0.875      1462
+                           macro avg      0.886     0.876     0.876      1462
+                        weighted avg      0.883     0.875     0.874      1462
+
