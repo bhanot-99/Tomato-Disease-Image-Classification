@@ -96,3 +96,101 @@ Spider mites Two-spotted spider mite      0.893     0.887     0.890       150
                            macro avg      0.886     0.876     0.876      1462
                         weighted avg      0.883     0.875     0.874      1462
 
+
+==============================
+TIMESTAMP: 2026-04-20 21:11
+STRATEGY: D_finetuned (Fine-tuned from Strategy A)
+SETTINGS: LR=1e-05, Epochs=10, Unfrozen Layers=30
+------------------------------
+
+==============================
+TIMESTAMP: 2026-04-20 21:13
+STRATEGY: D_finetuned (Fine-tuned from Strategy A)
+SETTINGS: LR=1e-05, Epochs=10, Unfrozen Layers=30
+------------------------------
+
+==============================
+TIMESTAMP: 2026-04-20 21:17
+STRATEGY: D_finetuned (Fine-tuned from Strategy A)
+SETTINGS: LR=1e-05, Epochs=10, Unfrozen Layers=30
+------------------------------
+Segmented Test Acc : 0.8792
+Best Val Acc (Hist): 0.8685
+==============================
+
+==============================
+TIMESTAMP: 2026-04-20 21:18
+STRATEGY: D_finetuned (Fine-tuned from Strategy A)
+SETTINGS: LR=1e-05, Epochs=10, Unfrozen Layers=30
+------------------------------
+Segmented Test Acc : 0.8792
+Best Val Acc (Hist): 0.8685
+==============================
+
+==============================
+TIMESTAMP: 2026-04-21 01:46
+STRATEGY: D_finetuned (Fine-tuned from Strategy A)
+SETTINGS: LR=1e-05, Epochs=10, Unfrozen Layers=30
+------------------------------
+Segmented Test Acc : 0.6040
+Best Val Acc (Hist): 0.6162
+==============================
+
+Strategy D_finetuned
+  Base model      : Strategy A (Color, 89.06%)
+  Fine-tune data  : Segmented dataset
+  Fine-tune lr    : 1e-05
+  Fine-tune epochs: 10
+  Test Accuracy   : 0.8842
+  Test Loss       : 0.3688
+  Best Val Acc    : 0.8728
+  vs Strategy A   : -0.64%
+
+Strategy D_finetuned — Evaluation
+  Test Accuracy    : 0.8842
+  Test Loss        : 0.3688
+  Classification Report:
+                precision    recall  f1-score   support
+
+Bacterial spot      0.893     0.887     0.890       150
+  Early blight      0.918     0.747     0.824       150
+   Late blight      0.926     0.913     0.919       150
+     Leaf Mold      0.917     0.923     0.920       143
+      Septoria      0.870     0.893     0.882       150
+  Spider mites      0.895     0.853     0.874       150
+   Target Spot      0.782     0.767     0.774       150
+   Yellow Curl      0.993     0.960     0.976       150
+  Mosaic virus      0.982     0.964     0.973        56
+       Healthy      0.771     0.987     0.865       150
+
+      accuracy                          0.884      1399
+     macro avg      0.895     0.889     0.890      1399
+  weighted avg      0.889     0.884     0.884      1399
+
+
+Strategy E_selective
+  Routing         : 4 color / 3 segmented / 3 mixed
+  Test Accuracy   : 0.9388
+  Test Loss       : 0.1880
+  Best Val Acc    : 0.9278
+  vs Strategy A   : +4.82%
+  vs Strategy D   : +5.46%
+  E class wins    : 6/10
+
+Strategy E_selective_V2
+  Routing         : 4 color / 3 segmented / 3 mixed
+  Test Accuracy   : 0.9388
+  Test Loss       : 0.1880
+  Best Val Acc    : 0.9278
+  vs Strategy A   : +4.82%
+  vs Strategy D   : +5.46%
+  E class wins    : 6/10
+
+Strategy E_selective_V3
+  Routing         : 4 color / 3 segmented / 3 mixed
+  Test Accuracy   : 0.9388
+  Test Loss       : 0.1880
+  Best Val Acc    : 0.9278
+  vs Strategy A   : +4.82%
+  vs Strategy D   : +5.46%
+  E class wins    : 6/10
