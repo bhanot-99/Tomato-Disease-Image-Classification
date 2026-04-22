@@ -249,7 +249,7 @@ Student ID: 2211981181
 
 ## 📜 License
 
-This project is for academic and research purposes under CS183 — Lab Oriented Project.
+This project is for research purpose
 
 ---
 
