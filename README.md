@@ -4,48 +4,45 @@
 
 ## 📌 Overview
 
-This project investigates how **image preprocessing domain** affects deep learning performance for tomato leaf disease classification. Using **MobileNetV2** transfer learning on the **PlantVillage dataset** (10 classes, ~9,300+ images), five distinct training strategies are systematically compared — culminating in a novel **class-aware selective mixing** approach (Strategy E) that routes each disease class to its optimal image domain based on per-class accuracy analysis.
+This project investigates how **image preprocessing domain** affects deep learning performance for tomato leaf disease classification. Using **MobileNetV2** transfer learning on the **PlantVillage dataset** (10 classes, ~9,300+ images), five distinct training strategies were systematically compared. This culminates in a novel **class-aware selective mixing** approach (Strategy E) that routes each disease class to its optimal image domain based on per-class accuracy analysis. 
 
 > **Research Hypothesis:** Different tomato diseases rely on different visual cues (color contrast vs. texture/shape). A smart, class-aware mixing strategy that trains each class on its optimal image domain should outperform any single uniform strategy.
 
 ---
 
-## 🎯 Key Results (Completed Strategies)
+## 🎯 Key Results 
 
-| Strategy | Description | Test Accuracy |
-|----------|-------------|:-------------:|
-| **A** | Color images (baseline) | **89.06%** ✅ |
-| **B** | Segmented images | **86.13%** ✅ |
-| **C** | Random 50/50 mix | **87.54%** ✅ |
-| **D** | Fine-tune A on segmented (lr=1e-5) | ⏳ Planned |
-| **E** | Class-aware selective mixing (original) | ⏳ Planned |
+All five training strategies have been completed. Strategy E emerged as the definitive winner, achieving a deterministic **93.88% accuracy** and outperforming all uniform baselines.
 
-> Strategy A (Color) leads overall, but no single strategy dominates every class — which is exactly what motivates the class-aware approach in Strategy E.
+| Strategy | Description | Test Accuracy | Status |
+|----------|-------------|:-------------:|:------:|
+| **A** | Color images (baseline) | **89.06%** | ✅ |
+| **B** | Segmented images | **86.13%** | ✅ |
+| **C** | Random 50/50 mix | **87.48%** | ✅ |
+| **D** | Fine-tune A on segmented (lr=1e-5) | **88.42%** | ✅ |
+| **E** | Class-aware selective mixing | **93.88%** | ✅ 🏆 |
 
-### Per-Class Accuracy — A vs. B vs. C
+### Per-Class Accuracy Head-to-Head
 
-| Disease Class | A (Color) | B (Segmented) | C (Mixed) | C−A | C−B | 🏆 Best |
+| Disease Class | A (Color) | B (Segmented) | C (Mixed) | D (Fine-Tuned) | ★ E (Selective) | 🏆 Winner |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|
-| Bacterial Spot | 99.3% | 78.7% | 90.0% | −9.3% | +11.3% | **A** 🔵 |
-| Early Blight | 82.0% | 74.7% | 62.0% | −20.0% | −12.7% | **A** 🔵 |
-| Late Blight | 89.3% | 92.0% | **94.7%** | +5.4% | +2.7% | **C** 🟢 |
-| Leaf Mold | **92.3%** | 79.0% | 92.0% | −0.3% | +13.0% | **A** 🔵 |
-| Septoria Leaf Spot | 85.3% | **90.7%** | 89.3% | +4.0% | −1.4% | **B** 🟠 |
-| Spider Mites | 77.3% | **89.3%** | 88.7% | +11.4% | −0.6% | **B** 🟠 |
-| Target Spot | 86.0% | 85.3% | **87.3%** | +1.3% | +2.0% | **C** 🟢 |
-| Yellow Leaf Curl Virus | 95.3% | **96.7%** | 90.7% | −4.6% | −6.0% | **B** 🟠 |
-| Mosaic Virus | 91.1% | 82.1% | **93.8%** | +2.6% | +11.7% | **C** 🟢 |
-| Healthy | **94.0%** | 90.0% | 88.0% | −6.0% | −2.0% | **A** 🔵 |
-| **OVERALL** | **89.1%** | 86.1% | 87.5% | — | — | **A** 🔵 |
+| Bacterial Spot | **99.3%** | 78.7% | 90.0% | 88.7% | 98.0% | **A** 🔵 |
+| Early Blight | 82.0% | 74.7% | 62.0% | 74.7% | **82.7%** | **E** ⭐ |
+| Late Blight | 89.3% | 92.0% | **94.7%** | 91.3% | 88.0% | **C** 🟢 |
+| Leaf Mold | 92.3% | 79.0% | 92.0% | 92.3% | **95.1%** | **E** ⭐ |
+| Septoria Leaf Spot | 85.3% | 90.7% | 89.3% | 89.3% | **97.3%** | **E** ⭐ |
+| Spider Mites | 77.3% | 89.3% | 88.7% | 85.3% | **96.7%** | **E** ⭐ |
+| Target Spot | 86.0% | 85.3% | 87.3% | 76.7% | **91.3%** | **E** ⭐ |
+| Yellow Leaf Curl Virus | 95.3% | **96.7%** | 90.7% | 96.0% | **96.7%** | **E** ⭐ |
+| Mosaic Virus | 91.1% | 82.1% | 93.8% | 96.4% | **97.3%** | **E** ⭐ |
+| Healthy | 94.0% | 90.0% | 88.0% | **98.7%** | 96.7% | **D** 🟣 |
+| **OVERALL** | 89.06% | 86.13% | 87.48% | 88.42% | **93.88%** | **E** ⭐ |
 
-**Class-level wins:** A wins 4/10 🔵 · B wins 3/10 🟠 · C wins 3/10 🟢
-
-> No single strategy dominates — each wins different classes. This directly motivates **Strategy E**: class-aware routing where each disease is trained on its optimal domain.
+**Class-level wins:** Strategy E dominates with **7 out of 10** class wins. Strategies A, C, and D each won a single class, while Strategy B won none outright.
 
 ---
 
 ## 🗂️ Repository Structure
-
 ```
 TomatoClassification/
 │
@@ -120,45 +117,54 @@ Dense(10, Softmax)
 
 ---
 
+**Training config:**
+- Optimizer: Adam (lr=1e-4)
+- Loss: Categorical Cross-Entropy
+- Callback: EarlyStopping + ModelCheckpoint
+
+---
+
 ## 🧪 Training Strategies
 
 ### Strategy A — Color Images (Baseline)
 Full-color PlantVillage images. Preserves all chromatic disease signatures.  
-📌 **Result: 89.06% test accuracy**
+📌 **Result: 89.06% test accuracy** (Loss: 0.3366, F1: 0.893). Color context proved to be the strongest global signal.
 
 ### Strategy B — Segmented Images
 Leaf region isolated via background segmentation. Removes soil/background noise; preserves shape and texture.  
-📌 **Result: 86.13% test accuracy**
+📌 **Result: 86.13% test accuracy** (Loss: 0.4064, F1: 0.864). Double-edged sword: improved Spider Mites texture recognition but caused a 20.6% collapse in Bacterial Spot by destroying color-contrast signals.
 
 ### Strategy C — Random 50/50 Mix
-Training set composed of 50% color + 50% segmented images, randomly mixed. Tests whether exposure to both domains improves generalization without class-specific routing.  
-📌 **Result: 87.54% test accuracy** — sits between A and B overall, wins 3 classes (Late Blight, Target Spot, Mosaic Virus). Confirms that naive mixing alone isn't sufficient; smart routing is needed.
+Training set composed of 50% color + 50% segmented images, randomly mixed.  
+📌 **Result: 87.48% test accuracy** (Loss: 0.3631, F1: 0.876). Failed to achieve the "best of both worlds." Conflicting representations confused the model, causing Early Blight accuracy to collapse from 82% to 62%.
 
-### Strategy D — Fine-tune Strategy A on Segmented *(Planned)*
-Takes the trained Strategy A model and continues training on segmented images at a very low learning rate (lr=1e-5, 10 epochs). Tests whether domain adaptation via fine-tuning is effective.
+### Strategy D — Fine-tune Strategy A on Segmented
+Takes the trained Strategy A model and continues training on segmented images at a very low learning rate (lr=1e-5, 10 epochs).  
+📌 **Result: 88.42% test accuracy** (Loss: 0.3688, F1: 0.890). Sequential domain adaptation showed minimal catastrophic forgetting (only -0.64% overall vs. A) and produced the best result for the 'Healthy' class (98.7%), but ultimately failed to outperform the baseline average.
 
-### Strategy E — Class-Aware Selective Mixing *(Planned — Original Contribution)*
-The core research contribution. Each disease class is routed to the image domain (color or segmented) where Strategy A vs. B analysis shows it performs best:
+### ★ Strategy E — Class-Aware Selective Mixing (Original Contribution)
+The core research contribution. Each disease class was explicitly routed to the image domain (color or segmented) where Strategy A vs. B analysis showed it performed best:
 
-- **Color domain** → Bacterial Spot, Early Blight, Leaf Mold, Healthy (A wins all four)
-- **Segmented domain** → Septoria Leaf Spot, Spider Mites, Yellow Leaf Curl Virus (B wins all three)
-- **Mixed domain** → Late Blight, Target Spot, Mosaic Virus (C wins all three)
+- **Color domain** → Bacterial Spot, Early Blight, Leaf Mold, Healthy
+- **Segmented domain** → Septoria Leaf Spot, Spider Mites, Yellow Leaf Curl Virus
+- **Mixed domain** → Late Blight, Target Spot, Mosaic Virus
 
-This creates a curated, class-optimized training dataset that is neither uniformly color nor uniformly segmented.
+📌 **Result: 93.88% test accuracy** (Loss: 0.1880, F1: 0.940). 
+This curated, class-optimized dataset provided the definitive best result, yielding a **+4.82% improvement** over the standard baseline. The approach proved 100% reproducible across 3 independent runs with a fixed seed ($\sigma = 0$).
 
 ---
 
-## 🔬 Planned Analysis & Experiments
+## 🔬 Analysis & Experiments Tracker
 
 - [x] Strategy A — Color baseline training & evaluation
 - [x] Strategy B — Segmented training & evaluation
 - [x] A vs. B per-class comparison
 - [x] Strategy C — Random mixed training & evaluation
-- [x] A vs. B vs. C full comparison
-- [ ] Strategy D — Fine-tuning experiment
-- [ ] Strategy E — Class-aware selective mixing
-- [ ] Grad-CAM visualizations (explainability)
-- [ ] Severity estimation module
+- [x] Strategy D — Fine-tuning experiment
+- [x] Strategy E — Class-aware selective mixing
+- [x] Final comparative evaluation of all 5 strategies
+- [ ] Grad-CAM visualizations (explainability module)
+- [ ] Severity estimation regression module
 - [ ] Robustness testing (noise, blur, occlusion)
 
 ---
@@ -173,7 +179,7 @@ This creates a curated, class-optimized training dataset that is neither uniform
 ### Installation
 
 ```bash
-git clone https://github.com/bhanot-99/Tomato-Disease-Image-Classification.git
+git clone [https://github.com/bhanot-99/Tomato-Disease-Image-Classification.git](https://github.com/bhanot-99/Tomato-Disease-Image-Classification.git)
 cd Tomato-Disease-Image-Classification
 pip install -r requirements.txt
 ```
