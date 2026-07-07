@@ -247,12 +247,6 @@ Student ID: 2211981181
 
 ---
 
-## 📜 License
-
-This project is for research purpose
-
----
-
 ## 🙏 Acknowledgements
 
 - [PlantVillage Dataset](https://plantvillage.psu.edu/) — Penn State University
