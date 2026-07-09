@@ -1,0 +1,5 @@
+
+Strategy B_segmented
+  Test Accuracy : 0.8685
+  Test Loss     : 0.3714
+  Best Val Acc  : 0.8642

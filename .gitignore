@@ -1,0 +1,28 @@
+# Virtual environments
+.venv/
+myenv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Datasets
+dataset/
+validation/
+Testing/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Models
+# If you want to track models, uncomment the next line and consider using Git LFS
+# models/*.h5

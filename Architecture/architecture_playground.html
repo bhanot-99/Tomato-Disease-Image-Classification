@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>TomatoClassification — Research</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400;700;900&family=Raleway:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ── DESIGN TOKENS (exact from ikjunim.com CSS) ─────────── */
+:root{
+  --white:#faf9f6;
+  --black:#181717;
+  --blue:#227c9d;
+  --green:#17c3b2;
+  --red:#fe6d73;
+  --yellow:#ffcb77;
+  --square-count:16;
+  --sq:max(calc(100svw/var(--square-count)),calc(100svh/var(--square-count)));
+}
+*{margin:0;padding:0;box-sizing:border-box;max-width:100%;overscroll-behavior:none;}
+html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+body{background-color:var(--white);color:var(--black);font-family:'Raleway',sans-serif;cursor:none;overflow-x:hidden;}
+
+/* ── GRID BACKGROUND ─────────────────────────────────────── */
+.fake-grid{
+  background-position:-1px -1px,-1px -1px;
+  background-image:linear-gradient(var(--black) 1px,transparent 1px),linear-gradient(to right,var(--black) 1px,transparent 1px);
+  background-size:var(--sq) var(--sq);
+  opacity:0.07;
+  position:fixed;inset:0;pointer-events:none;z-index:0;
+}
+
+/* ── CUSTOM CURSOR ───────────────────────────────────────── */
+#cursor-dot{
+  position:fixed;width:12px;height:12px;background:var(--black);border-radius:50%;
+  pointer-events:none;z-index:9999;transform:translate(-50%,-50%);
+  transition:width .15s,height .15s,background .15s;
+  mix-blend-mode:difference;
+}
+#cursor-ring{
+  position:fixed;width:36px;height:36px;border:2px solid var(--black);border-radius:50%;
+  pointer-events:none;z-index:9998;transform:translate(-50%,-50%);
+  transition:all .1s ease;mix-blend-mode:difference;
+}
+body:has(button:hover) #cursor-dot,
+body:has(.clickable:hover) #cursor-dot{width:20px;height:20px;}
+
+/* ── TYPOGRAPHY SCALE (fluid, from ikjunim.com) ──────────── */
+.text-heading{font-size:clamp(0rem,4svw + 1rem,8rem);font-family:'Raleway',sans-serif;}
+.text-headingHalf{font-size:clamp(0rem,2svw + 1rem,4rem);}
+.text-nav{font-size:clamp(0rem,2svw + .8rem,3rem);}
+.text-text{font-size:clamp(0rem,1svw + .5rem,2rem);}
+.text-tiny{font-size:clamp(0rem,.5svw + .2rem,1rem);}
+.text-brick{font-size:clamp(0rem,min(3svw,3svh) + 1rem,3rem);}
+.text-slate{font-size:clamp(0rem,2svw + .5rem,3rem);}
+.font-mono{font-family:'Azeret Mono',monospace;}
+
+/* ── LEVEL BUTTON (exact from ikjunim.com) ───────────────── */
+.level-button{
+  position:relative;border:2px solid var(--white);padding:.5rem 1.2rem;
+  cursor:pointer;box-shadow:1px 1px,2px 2px,3px 3px,4px 4px,5px 5px;
+  user-select:none;transition:box-shadow .2s,top .2s,left .2s;
+  outline:none;font-family:'Azeret Mono',monospace;letter-spacing:.05em;
+  background:transparent;color:var(--white);
+}
+.level-button:active{box-shadow:0 0;top:5px;left:5px;}
+.level-button.dark{border-color:var(--black);color:var(--black);
+  box-shadow:1px 1px var(--black),2px 2px var(--black),3px 3px var(--black),4px 4px var(--black),5px 5px var(--black);}
+.level-button.dark:active{box-shadow:0 0;top:5px;left:5px;}
+
+/* ── NAV ─────────────────────────────────────────────────── */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:500;
+  display:flex;justify-content:space-between;align-items:center;
+  padding:clamp(.6rem,1svh,.9rem) clamp(1rem,2svw,2.5rem);
+  border-bottom:2px solid var(--black);background:var(--white);
+}
+.nav-logo{
+  font-family:'Azeret Mono',monospace;font-size:clamp(.65rem,.8svw + .3rem,1rem);
+  font-weight:700;letter-spacing:.08em;display:flex;align-items:center;gap:.5rem;
+}
+.nav-logo .dot{width:.55em;height:.55em;background:var(--red);border-radius:50%;display:inline-block;}
+.nav-links{display:flex;gap:.5rem;flex-wrap:wrap;}
+.nav-link{
+  font-family:'Azeret Mono',monospace;font-size:clamp(.5rem,.5svw + .3rem,.85rem);
+  padding:.35rem .8rem;border:1.5px solid var(--black);background:transparent;
+  cursor:pointer;transition:background .2s,color .2s;letter-spacing:.04em;
+  position:relative;
+}
+.nav-link:hover{background:var(--black);color:var(--white);}
+.nav-link.active{background:var(--black);color:var(--white);}
+.nav-score{
+  font-family:'Azeret Mono',monospace;font-size:clamp(.5rem,.5svw + .3rem,.85rem);
+  font-weight:900;color:var(--red);letter-spacing:.06em;
+  border:1.5px solid var(--red);padding:.35rem .8rem;
+}
+
+/* ── HERO SECTION ────────────────────────────────────────── */
+.hero{
+  min-height:100svh;display:flex;flex-direction:column;justify-content:flex-end;
+  padding:clamp(5rem,8svh,8rem) clamp(1rem,3svw,4rem) clamp(2rem,3svh,3rem);
+  position:relative;border-bottom:2px solid var(--black);
+}
+.hero-label{
+  font-family:'Azeret Mono',monospace;font-size:clamp(.55rem,.5svw + .25rem,.8rem);
+  letter-spacing:.15em;text-transform:uppercase;opacity:.5;margin-bottom:.8rem;
+  display:flex;align-items:center;gap:.6rem;
+}
+.hero-label::before{content:'';width:2rem;height:1.5px;background:var(--black);}
+.hero-title{
+  font-size:clamp(2.5rem,8svw + 1rem,11rem);font-weight:900;line-height:.88;
+  letter-spacing:-.04em;margin-bottom:1.5rem;
+}
+.hero-title .line{display:block;overflow:hidden;}
+.hero-title .word{display:inline-block;transform:translateY(110%);
+  animation:slideUp .9s cubic-bezier(.16,1,.3,1) forwards;}
+.hero-title .word:nth-child(2){animation-delay:.08s;}
+.hero-title .word:nth-child(3){animation-delay:.16s;}
+@keyframes slideUp{to{transform:translateY(0);}}
+.hero-accent{color:var(--red);}
+.hero-bottom{
+  display:flex;justify-content:space-between;align-items:flex-end;
+  gap:2rem;flex-wrap:wrap;margin-top:2rem;
+}
+.hero-desc{
+  font-family:'Azeret Mono',monospace;font-size:clamp(.55rem,.5svw + .3rem,.9rem);
+  max-width:36rem;line-height:1.8;opacity:.7;
+}
+.hero-tags{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:1rem;}
+.tag{
+  font-family:'Azeret Mono',monospace;font-size:clamp(.45rem,.35svw + .25rem,.72rem);
+  padding:.25rem .7rem;border:1.5px solid var(--black);letter-spacing:.06em;
+}
+.tag.blue{border-color:var(--blue);color:var(--blue);}
+.tag.green{border-color:var(--green);color:var(--green);}
+.tag.yellow{border-color:var(--yellow);color:#c89500;}
+.tag.red{border-color:var(--red);color:var(--red);}
+.hero-score{
+  font-family:'Azeret Mono',monospace;text-align:right;
+}
+.hero-score-num{
+  font-size:clamp(2rem,5svw + 1rem,7rem);font-weight:900;color:var(--red);
+  line-height:1;letter-spacing:-.04em;
+}
+.hero-score-sub{font-size:clamp(.55rem,.5svw + .25rem,.85rem);opacity:.5;margin-top:.3rem;}
+
+/* ── SECTION BASE ────────────────────────────────────────── */
+section{position:relative;border-bottom:2px solid var(--black);}
+.section-inner{padding:clamp(2.5rem,5svh,5rem) clamp(1rem,3svw,4rem);}
+.section-head{
+  display:flex;align-items:baseline;justify-content:space-between;
+  gap:1rem;margin-bottom:clamp(1.5rem,3svh,3rem);flex-wrap:wrap;
+}
+.section-num{
+  font-family:'Azeret Mono',monospace;font-size:clamp(.55rem,.5svw + .25rem,.85rem);
+  opacity:.35;letter-spacing:.1em;
+}
+.section-title-text{
+  font-size:clamp(1.4rem,3svw + .5rem,4.5rem);font-weight:900;
+  letter-spacing:-.03em;line-height:1;
+}
+.section-title-text .acc{color:var(--red);}
+
+/* ── STRATEGY CARDS ──────────────────────────────────────── */
+.strat-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));
+  gap:0;border:2px solid var(--black);
+}
+.strat-card{
+  border-right:2px solid var(--black);padding:clamp(1rem,2svh,1.8rem) clamp(.8rem,1.5svw,1.4rem);
+  position:relative;overflow:hidden;cursor:pointer;
+  transition:background .25s;
+}
+.strat-card:last-child{border-right:none;}
+.strat-card:hover{background:var(--black);color:var(--white);}
+.strat-card:hover .sc-num{color:var(--white);opacity:.4;}
+.strat-card:hover .sc-tag{color:var(--white);opacity:.5;}
+.strat-card:hover .sc-bar-track{background:rgba(255,255,255,.15);}
+.strat-card:hover .sc-bar-fill{filter:brightness(1.3);}
+.strat-card:hover .tag{border-color:rgba(255,255,255,.4);color:rgba(255,255,255,.7);}
+.strat-card.ce:hover{background:var(--red);color:var(--white);}
+.sc-num{font-family:'Azeret Mono',monospace;font-size:clamp(.5rem,.4svw + .2rem,.7rem);opacity:.3;letter-spacing:.1em;margin-bottom:.5rem;}
+.sc-tag{font-family:'Azeret Mono',monospace;font-size:clamp(.45rem,.4svw + .2rem,.7rem);opacity:.45;letter-spacing:.12em;text-transform:uppercase;margin-bottom:.4rem;}
+.sc-name{font-size:clamp(.8rem,.8svw + .3rem,1.3rem);font-weight:800;margin-bottom:.2rem;letter-spacing:-.01em;}
+.sc-desc{font-family:'Azeret Mono',monospace;font-size:clamp(.42rem,.35svw + .2rem,.65rem);opacity:.5;line-height:1.6;margin-bottom:1rem;}
+.sc-acc{font-size:clamp(1.8rem,3.5svw + .5rem,4.5rem);font-weight:900;line-height:1;letter-spacing:-.04em;margin-bottom:.2rem;}
+.sc-acc-sub{font-family:'Azeret Mono',monospace;font-size:clamp(.4rem,.3svw + .2rem,.6rem);opacity:.45;margin-bottom:.8rem;}
+.sc-bar-track{height:3px;background:rgba(24,23,23,.1);margin-bottom:.8rem;}
+.sc-bar-fill{height:100%;transition:width 1.4s cubic-bezier(.16,1,.3,1);}
+.sc-stats{display:flex;flex-direction:column;gap:.25rem;border-top:1.5px solid currentColor;padding-top:.6rem;opacity:.6;}
+.sc-stat{display:flex;justify-content:space-between;font-family:'Azeret Mono',monospace;font-size:clamp(.4rem,.3svw + .2rem,.6rem);}
+.sc-badge-wrap{margin-top:.6rem;}
+/* accent colors */
+.ca .sc-acc{color:var(--blue);}
+.ca .sc-bar-fill{background:var(--blue);}
+.cb .sc-acc{color:var(--yellow);filter:brightness(.75);}
+.cb .sc-bar-fill{background:var(--yellow);}
+.cc .sc-acc{color:var(--green);filter:brightness(.8);}
+.cc .sc-bar-fill{background:var(--green);}
+.cd .sc-acc{color:#7c5cbf;}
+.cd .sc-bar-fill{background:#7c5cbf;}
+.ce .sc-acc{color:var(--red);}
+.ce .sc-bar-fill{background:linear-gradient(90deg,var(--red),var(--yellow));}
+.ce{border:2px solid var(--red)!important;margin:-1px;}
+
+/* ── PIPELINE ────────────────────────────────────────────── */
+.pipeline-scroll{overflow-x:auto;padding-bottom:.5rem;}
+.pipeline{display:flex;align-items:stretch;gap:0;}
+.pipe-node{
+  flex-shrink:0;width:clamp(90px,10svw,140px);
+  border:1.5px solid var(--black);padding:.8rem .7rem;
+  position:relative;cursor:pointer;transition:background .2s;
+  text-align:center;
+}
+.pipe-node:not(:first-child){margin-left:-1.5px;}
+.pipe-node:hover{background:var(--black);color:var(--white);}
+.pipe-node.done{border-top:3px solid var(--green);}
+.pipe-node.star-node{border-top:3px solid var(--red);border-color:var(--red);}
+.pipe-node.pending{border-top:3px solid var(--yellow);opacity:.65;}
+.pn-icon{font-size:clamp(1rem,1.5svw,.5rem);margin-bottom:.4rem;}
+.pn-title{font-family:'Azeret Mono',monospace;font-size:clamp(.42rem,.35svw + .2rem,.65rem);font-weight:700;margin-bottom:.2rem;}
+.pn-sub{font-family:'Azeret Mono',monospace;font-size:clamp(.38rem,.3svw + .15rem,.55rem);opacity:.5;line-height:1.5;}
+.pipe-arrow{
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  width:clamp(24px,3svw,40px);position:relative;overflow:hidden;
+}
+.pipe-arrow svg{opacity:.25;width:clamp(12px,1.5svw,20px);}
+.arrow-dot{
+  position:absolute;width:5px;height:5px;border-radius:50%;top:50%;
+  margin-top:-2.5px;left:0;animation:flowRight 1.8s ease-in-out infinite;opacity:0;
+}
+.arrow-dot:nth-child(2){animation-delay:.6s;}
+.arrow-dot:nth-child(3){animation-delay:1.2s;}
+@keyframes flowRight{0%{left:0;opacity:0;}15%{opacity:1;}85%{opacity:1;}100%{left:100%;opacity:0;}}
+
+/* ── TWO-COL ─────────────────────────────────────────────── */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:0;border:2px solid var(--black);}
+.col-box{padding:clamp(1rem,2.5svh,2rem) clamp(.8rem,2svw,2rem);border-right:2px solid var(--black);}
+.col-box:last-child{border-right:none;}
+.col-title{font-family:'Azeret Mono',monospace;font-size:clamp(.55rem,.5svw + .25rem,.85rem);font-weight:700;margin-bottom:.4rem;letter-spacing:.06em;}
+.col-sub{font-family:'Azeret Mono',monospace;font-size:clamp(.42rem,.35svw + .2rem,.62rem);opacity:.45;margin-bottom:1rem;line-height:1.6;}
+
+/* ── TABS ────────────────────────────────────────────────── */
+.tab-bar{display:flex;gap:0;margin-bottom:0;border-bottom:1.5px solid var(--black);}
+.tb{
+  font-family:'Azeret Mono',monospace;font-size:clamp(.45rem,.4svw + .2rem,.7rem);
+  padding:.45rem .9rem;border:none;border-right:1.5px solid var(--black);
+  background:transparent;cursor:pointer;letter-spacing:.06em;
+  transition:background .18s,color .18s;
+}
+.tb:last-child{border-right:none;}
+.tb:hover{background:var(--black);color:var(--white);}
+.tb.act-a{background:var(--blue);color:var(--white);}
+.tb.act-b{background:var(--yellow);color:var(--black);}
+.tb.act-c{background:var(--green);color:var(--white);}
+.tb.act-d{background:#7c5cbf;color:var(--white);}
+.tb.act-e{background:var(--red);color:var(--white);}
+.panel{display:none;padding:1rem 0;}
+.panel.show{display:block;}
+
+/* ── TABLES ──────────────────────────────────────────────── */
+.rtable{width:100%;border-collapse:collapse;font-family:'Azeret Mono',monospace;font-size:clamp(.4rem,.35svw + .2rem,.65rem);}
+.rtable thead th{padding:.5rem .6rem;text-align:center;border-bottom:1.5px solid var(--black);letter-spacing:.06em;font-size:clamp(.38rem,.3svw + .18rem,.58rem);text-transform:uppercase;opacity:.5;}
+.rtable thead th:first-child{text-align:left;}
+.rtable tbody tr{border-bottom:1px solid rgba(24,23,23,.08);transition:background .12s;}
+.rtable tbody tr:hover{background:rgba(24,23,23,.04);}
+.rtable tbody td{padding:.45rem .6rem;text-align:center;}
+.rtable tbody td:first-child{text-align:left;font-family:'Raleway',sans-serif;font-weight:700;font-size:clamp(.45rem,.4svw + .2rem,.72rem);}
+.rtable tfoot td{padding:.5rem .6rem;text-align:center;border-top:1.5px solid var(--black);opacity:.5;font-size:clamp(.38rem,.3svw + .15rem,.55rem);}
+.rtable tfoot td:first-child{text-align:left;}
+.vh{color:#12783a;font-weight:700;}
+.vm{color:#a07010;}
+.vw{color:var(--red);}
+.vl{color:#c00;font-weight:900;}
+
+/* ── PER-CLASS TABLE ─────────────────────────────────────── */
+.pct{width:100%;border-collapse:collapse;font-family:'Azeret Mono',monospace;font-size:clamp(.4rem,.35svw + .18rem,.62rem);}
+.pct thead th{padding:.5rem .5rem;text-align:center;border-bottom:1.5px solid var(--black);text-transform:uppercase;letter-spacing:.06em;opacity:.5;font-size:clamp(.36rem,.28svw + .16rem,.55rem);}
+.pct thead th:first-child{text-align:left;}
+.pct tbody tr{border-bottom:1px solid rgba(24,23,23,.07);transition:background .12s;}
+.pct tbody tr:hover{background:rgba(24,23,23,.04);}
+.pct tbody td{padding:.42rem .5rem;text-align:center;}
+.pct tbody td:first-child{text-align:left;font-family:'Raleway',sans-serif;font-weight:700;font-size:clamp(.42rem,.36svw + .2rem,.68rem);}
+.pct tfoot td{padding:.5rem .5rem;text-align:center;border-top:2px solid var(--black);font-weight:900;}
+.pct tfoot td:first-child{text-align:left;}
+.best-a{background:rgba(34,124,157,.12);color:var(--blue);font-weight:900;border-radius:2px;}
+.best-b{background:rgba(255,203,119,.18);color:#7a5f00;font-weight:900;border-radius:2px;}
+.best-c{background:rgba(23,195,178,.12);color:#0b6b62;font-weight:900;border-radius:2px;}
+.best-d{background:rgba(124,92,191,.12);color:#5c3a9a;font-weight:900;border-radius:2px;}
+.best-e{background:rgba(254,109,115,.12);color:#c00020;font-weight:900;border-radius:2px;}
+.dp{color:#12783a;}
+.dn{color:#c00020;}
+.dz{opacity:.4;}
+.danger-cell{color:#c00020;font-weight:900;}
+.wp{font-size:clamp(.35rem,.28svw + .15rem,.52rem);padding:.2rem .5rem;border:1px solid currentColor;letter-spacing:.04em;}
+.wp-a{color:var(--blue);}
+.wp-b{color:#7a5f00;}
+.wp-c{color:#0b6b62;}
+.wp-d{color:#5c3a9a;}
+.wp-e{color:#c00020;}
+
+/* ── WIN STRIP ───────────────────────────────────────────── */
+.win-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:0;border-top:2px solid var(--black);margin-top:0;}
+.win-box{padding:1rem;text-align:center;border-right:1.5px solid var(--black);cursor:default;}
+.win-box:last-child{border-right:none;}
+.win-num{font-size:clamp(1.8rem,3svw + .5rem,4rem);font-weight:900;line-height:1;}
+.win-label{font-family:'Azeret Mono',monospace;font-size:clamp(.38rem,.3svw + .18rem,.58rem);margin-top:.3rem;opacity:.6;letter-spacing:.04em;}
+.win-cls{font-family:'Azeret Mono',monospace;font-size:clamp(.34rem,.25svw + .15rem,.52rem);margin-top:.2rem;opacity:.35;line-height:1.5;}
+
+/* ── ROUTING GRID ────────────────────────────────────────── */
+.routing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:2px solid var(--black);}
+.route-col{border-right:2px solid var(--black);}
+.route-col:last-child{border-right:none;}
+.route-head{
+  padding:.7rem 1rem;font-family:'Azeret Mono',monospace;
+  font-size:clamp(.42rem,.38svw + .2rem,.68rem);font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;border-bottom:2px solid var(--black);
+}
+.rh-color{background:rgba(34,124,157,.1);color:var(--blue);}
+.rh-seg{background:rgba(255,203,119,.2);color:#7a5f00;}
+.rh-mix{background:rgba(23,195,178,.1);color:#0b6b62;}
+.route-item{padding:.7rem 1rem;border-bottom:1px solid rgba(24,23,23,.08);transition:background .15s;cursor:default;}
+.route-item:last-child{border-bottom:none;}
+.route-item:hover{background:rgba(24,23,23,.03);}
+.ri-name{font-size:clamp(.5rem,.45svw + .22rem,.8rem);font-weight:700;margin-bottom:.2rem;}
+.ri-rationale{font-family:'Azeret Mono',monospace;font-size:clamp(.38rem,.3svw + .16rem,.56rem);opacity:.45;line-height:1.6;margin-bottom:.3rem;}
+.ri-result{font-family:'Azeret Mono',monospace;font-size:clamp(.4rem,.32svw + .18rem,.6rem);color:var(--red);font-weight:700;}
+
+/* ── OBSERVATIONS ────────────────────────────────────────── */
+.obs-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;border:2px solid var(--black);}
+.obs-card{padding:clamp(1rem,2.5svh,2rem) clamp(.8rem,2svw,1.8rem);border-right:2px solid var(--black);border-bottom:2px solid var(--black);}
+.obs-card:nth-child(2n){border-right:none;}
+.obs-card:nth-child(3),.obs-card:nth-child(4){border-bottom:none;}
+.obs-head{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-bottom:1rem;}
+.obs-dot{width:.65em;height:.65em;border-radius:50%;flex-shrink:0;}
+.obs-title{font-size:clamp(.55rem,.55svw + .25rem,.9rem);font-weight:800;letter-spacing:-.01em;flex:1;}
+.obs-acc{font-family:'Azeret Mono',monospace;font-size:clamp(.45rem,.38svw + .2rem,.68rem);font-weight:700;}
+.obs-list{list-style:none;display:flex;flex-direction:column;}
+.obs-list li{font-family:'Azeret Mono',monospace;font-size:clamp(.4rem,.35svw + .18rem,.62rem);padding:.35rem 0 .35rem 1.1rem;position:relative;border-bottom:1px solid rgba(24,23,23,.07);line-height:1.6;}
+.obs-list li:last-child{border-bottom:none;}
+.obs-list li::before{position:absolute;left:0;font-weight:900;}
+.obs-list .ok::before{content:'✓';color:var(--green);}
+.obs-list .bad::before{content:'✗';color:var(--red);}
+.obs-list .warn::before{content:'!';color:var(--yellow);filter:brightness(.7);}
+.obs-list .info::before{content:'→';opacity:.35;}
+.obs-sum{margin-top:.7rem;padding:.6rem .8rem;background:rgba(24,23,23,.04);border-left:3px solid var(--black);font-family:'Azeret Mono',monospace;font-size:clamp(.38rem,.3svw + .16rem,.56rem);line-height:1.7;opacity:.7;}
+
+/* ── PENDING ─────────────────────────────────────────────── */
+.pending-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:2px solid var(--black);}
+.pending-card{padding:clamp(1rem,2svh,1.8rem) clamp(.8rem,1.5svw,1.4rem);border-right:2px solid var(--black);border-top:3px solid var(--yellow);cursor:pointer;transition:background .2s;}
+.pending-card:last-child{border-right:none;}
+.pending-card:hover{background:var(--yellow);}
+.pc-icon{font-size:clamp(1.2rem,2svw,.5rem);margin-bottom:.6rem;}
+.pc-title{font-size:clamp(.6rem,.6svw + .25rem,.95rem);font-weight:800;margin-bottom:.4rem;}
+.pc-desc{font-family:'Azeret Mono',monospace;font-size:clamp(.38rem,.32svw + .16rem,.58rem);opacity:.5;line-height:1.7;}
+
+/* ── CHART WRAPPER ───────────────────────────────────────── */
+.chart-wrap{border:2px solid var(--black);}
+.chart-header{padding:.8rem 1rem;border-bottom:1.5px solid var(--black);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;}
+.chart-title-text{font-size:clamp(.55rem,.55svw + .25rem,.9rem);font-weight:800;}
+.chart-sub-text{font-family:'Azeret Mono',monospace;font-size:clamp(.38rem,.3svw + .16rem,.58rem);opacity:.45;}
+.chart-body{padding:1rem;}
+.legend{display:flex;flex-wrap:wrap;gap:.8rem;margin-bottom:.8rem;}
+.leg-item{display:flex;align-items:center;gap:.4rem;font-family:'Azeret Mono',monospace;font-size:clamp(.38rem,.3svw + .16rem,.55rem);}
+.leg-dot{width:.65em;height:.65em;border-radius:1px;}
+
+/* ── CM ──────────────────────────────────────────────────── */
+.cm-wrap{overflow-x:auto;}
+
+/* ── FOOTER ──────────────────────────────────────────────── */
+footer{
+  display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;
+  padding:clamp(.8rem,1.5svh,1.2rem) clamp(1rem,3svw,4rem);
+  border-top:2px solid var(--black);
+}
+.footer-text{font-family:'Azeret Mono',monospace;font-size:clamp(.38rem,.3svw + .16rem,.58rem);opacity:.4;letter-spacing:.05em;}
+
+/* ── SCROLL REVEAL ───────────────────────────────────────── */
+.reveal{opacity:0;transform:translateY(20px);transition:opacity .7s ease,transform .7s ease;}
+.reveal.in{opacity:1;transform:none;}
+
+/* ── ANIMATED ACCENT LINE ────────────────────────────────── */
+@keyframes drawLine{from{width:0;}to{width:100%;}}
+
+/* ── RESPONSIVE ──────────────────────────────────────────── */
+@media(max-width:900px){
+  .strat-grid{grid-template-columns:repeat(2,1fr);}
+  .strat-card{border-bottom:2px solid var(--black);}
+  .strat-card:nth-child(2n){border-right:none;}
+  .two-col{grid-template-columns:1fr;}
+  .col-box{border-right:none;border-bottom:2px solid var(--black);}
+  .col-box:last-child{border-bottom:none;}
+  .routing-grid{grid-template-columns:1fr;}
+  .route-col{border-right:none;border-bottom:2px solid var(--black);}
+  .route-col:last-child{border-bottom:none;}
+  .obs-grid{grid-template-columns:1fr;}
+  .obs-card{border-right:none;}
+  .obs-card:nth-child(n){border-bottom:2px solid var(--black);}
+  .obs-card:last-child{border-bottom:none;}
+  .pending-grid{grid-template-columns:1fr 1fr;}
+  .pending-card:nth-child(2n){border-right:none;}
+  .win-strip{grid-template-columns:repeat(3,1fr);}
+}
+@media(max-width:600px){
+  .strat-grid{grid-template-columns:1fr;}
+  .strat-card{border-right:none;}
+  .nav-links{display:none;}
+  .pending-grid{grid-template-columns:1fr;}
+  .pending-card{border-right:none;}
+  .win-strip{grid-template-columns:repeat(2,1fr);}
+}
+</style>
+</head>
+<body>
+
+<div class="fake-grid"></div>
+<div id="cursor-dot"></div>
+<div id="cursor-ring"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo"><span class="dot"></span>TomatoClassification</div>
+  <div class="nav-links">
+    <button class="nav-link active" onclick="scrollTo('results')">Results</button>
+    <button class="nav-link" onclick="scrollTo('pipeline')">Pipeline</button>
+    <button class="nav-link" onclick="scrollTo('analysis')">Analysis</button>
+    <button class="nav-link" onclick="scrollTo('routing')">Strategy E</button>
+    <button class="nav-link" onclick="scrollTo('observations')">Insights</button>
+    <button class="nav-link" onclick="scrollTo('pending')">Pending</button>
+  </div>
+  <div class="nav-score">E = 93.88%</div>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="hero">
+  <div class="hero-label">MobileNetV2 · PlantVillage · 10 Classes</div>
+  <h1 class="hero-title">
+    <span class="line"><span class="word">Tomato</span></span>
+    <span class="line"><span class="word"><span class="hero-accent">Disease</span></span></span>
+    <span class="line"><span class="word" style="opacity:.35">Classification</span></span>
+  </h1>
+  <div class="hero-bottom">
+    <div>
+      <div class="hero-desc">5-strategy comparative study · class-aware selective mixing · original research contribution · fully reproducible results</div>
+      <div class="hero-tags">
+        <span class="tag blue">TensorFlow 2.10</span>
+        <span class="tag green">Python 3.11</span>
+        <span class="tag">MobileNetV2</span>
+        <span class="tag yellow">PlantVillage</span>
+        <span class="tag red">3-run variance: 0.00%</span>
+      </div>
+      <div style="margin-top:1.2rem;display:flex;gap:.8rem;flex-wrap:wrap;">
+        <button class="level-button dark" onclick="scrollTo('results')" style="font-size:clamp(.45rem,.4svw + .2rem,.7rem);">VIEW RESULTS</button>
+        <button class="level-button dark" onclick="scrollTo('routing')" style="font-size:clamp(.45rem,.4svw + .2rem,.7rem);">STRATEGY E ★</button>
+      </div>
+    </div>
+    <div class="hero-score">
+      <div style="font-family:'Azeret Mono',monospace;font-size:clamp(.45rem,.4svw + .2rem,.7rem);opacity:.4;letter-spacing:.1em;margin-bottom:.2rem;">BEST RESULT</div>
+      <div class="hero-score-num">93.88%</div>
+      <div class="hero-score-sub">+4.82% over Strategy A · Loss: 0.1880</div>
+    </div>
+  </div>
+</section>
+
+<!-- STRATEGY CARDS -->
+<section id="results">
+  <div class="section-inner">
+    <div class="section-head">
+      <div class="section-num font-mono">01 — EXPERIMENTS</div>
+      <div class="section-title-text">All 5 Strategies <span class="acc">Complete</span></div>
+    </div>
+    <div class="strat-grid reveal">
+      <div class="strat-card ca">
+        <div class="sc-num">STRATEGY A</div>
+        <div class="sc-name">Color Only</div>
+        <div class="sc-desc">Fresh ImageNet · Color RGB · lr=0.001 · 20 epochs</div>
+        <div class="sc-acc">89.06%</div>
+        <div class="sc-acc-sub">TEST ACCURACY</div>
+        <div class="sc-bar-track"><div class="sc-bar-fill" style="width:0" data-w="89.06%"></div></div>
+        <div class="sc-stats">
+          <div class="sc-stat"><span>Val acc</span><span>88.85%</span></div>
+          <div class="sc-stat"><span>Loss</span><span>0.3366</span></div>
+          <div class="sc-stat"><span>Macro F1</span><span>0.893</span></div>
+        </div>
+        <div class="sc-badge-wrap"><span class="tag">2nd overall</span></div>
+      </div>
+      <div class="strat-card cb">
+        <div class="sc-num">STRATEGY B</div>
+        <div class="sc-name">Segmented Only</div>
+        <div class="sc-desc">GrabCut masked · black bg · 20 epochs</div>
+        <div class="sc-acc">86.13%</div>
+        <div class="sc-acc-sub">TEST ACCURACY</div>
+        <div class="sc-bar-track"><div class="sc-bar-fill" style="width:0" data-w="86.13%"></div></div>
+        <div class="sc-stats">
+          <div class="sc-stat"><span>Val acc</span><span>86.42%</span></div>
+          <div class="sc-stat"><span>Loss</span><span>0.4064</span></div>
+          <div class="sc-stat"><span>Macro F1</span><span>0.864</span></div>
+        </div>
+        <div class="sc-badge-wrap"><span class="tag">4th overall</span></div>
+      </div>
+      <div class="strat-card cc">
+        <div class="sc-num">STRATEGY C</div>
+        <div class="sc-name">Mixed 50/50</div>
+        <div class="sc-desc">Random blend color + segmented · 20 epochs</div>
+        <div class="sc-acc">87.48%</div>
+        <div class="sc-acc-sub">TEST ACCURACY</div>
+        <div class="sc-bar-track"><div class="sc-bar-fill" style="width:0" data-w="87.48%"></div></div>
+        <div class="sc-stats">
+          <div class="sc-stat"><span>Val acc</span><span>87.14%</span></div>
+          <div class="sc-stat"><span>Loss</span><span>0.3631</span></div>
+          <div class="sc-stat"><span>Macro F1</span><span>0.876</span></div>
+        </div>
+        <div class="sc-badge-wrap"><span class="tag">3rd overall</span></div>
+      </div>
+      <div class="strat-card cd">
+        <div class="sc-num">STRATEGY D</div>
+        <div class="sc-name">Fine-Tuned A→Seg</div>
+        <div class="sc-desc">Load A weights · lr=1e-5 · 10 fine-tune epochs</div>
+        <div class="sc-acc">88.42%</div>
+        <div class="sc-acc-sub">TEST ACCURACY</div>
+        <div class="sc-bar-track"><div class="sc-bar-fill" style="width:0" data-w="88.42%"></div></div>
+        <div class="sc-stats">
+          <div class="sc-stat"><span>Val acc</span><span>87.28%</span></div>
+          <div class="sc-stat"><span>Loss</span><span>0.3688</span></div>
+          <div class="sc-stat"><span>Macro F1</span><span>0.890</span></div>
+        </div>
+        <div class="sc-badge-wrap"><span class="tag">2nd overall</span></div>
+      </div>
+      <div class="strat-card ce">
+        <div class="sc-num">★ STRATEGY E</div>
+        <div class="sc-name">Class-Aware Selective</div>
+        <div class="sc-desc">Per-class domain routing · original contribution</div>
+        <div class="sc-acc">93.88%</div>
+        <div class="sc-acc-sub">TEST ACCURACY · 3-RUN VARIANCE 0.00%</div>
+        <div class="sc-bar-track"><div class="sc-bar-fill" style="width:0" data-w="93.88%"></div></div>
+        <div class="sc-stats">
+          <div class="sc-stat"><span>Val acc</span><span>92.78%</span></div>
+          <div class="sc-stat"><span>Loss</span><span>0.1880</span></div>
+          <div class="sc-stat"><span>Macro F1</span><span>0.940</span></div>
+        </div>
+        <div class="sc-badge-wrap"><span class="tag red">🥇 1st overall</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PIPELINE -->
+<section id="pipeline">
+  <div class="section-inner">
+    <div class="section-head">
+      <div class="section-num font-mono">02 — PIPELINE</div>
+      <div class="section-title-text">System <span class="acc">Flow</span></div>
+    </div>
+    <div class="pipeline-scroll reveal">
+      <div class="pipeline">
+        <div class="pipe-node done"><div class="pn-icon">🗂️</div><div class="pn-title">PlantVillage</div><div class="pn-sub">10 cls · 18,160</div></div>
+        <div class="pipe-arrow"><svg viewBox="0 0 20 10" fill="none" stroke="currentColor"><path d="M0 5h16M12 1l4 4-4 4"/></svg><div class="arrow-dot" style="background:var(--blue)"></div><div class="arrow-dot" style="background:var(--red)"></div><div class="arrow-dot" style="background:var(--green)"></div></div>
+        <div class="pipe-node done"><div class="pn-icon">⚙️</div><div class="pn-title">Preprocess</div><div class="pn-sub">224×224</div></div>
+        <div class="pipe-arrow"><svg viewBox="0 0 20 10" fill="none" stroke="currentColor"><path d="M0 5h16M12 1l4 4-4 4"/></svg><div class="arrow-dot" style="background:var(--blue)"></div><div class="arrow-dot" style="background:var(--green)"></div></div>
+        <div class="pipe-node done"><div class="pn-icon">📦</div><div class="pn-title">MobileNetV2</div><div class="pn-sub">ImageNet</div></div>
+        <div class="pipe-arrow"><svg viewBox="0 0 20 10" fill="none" stroke="currentColor"><path d="M0 5h16M12 1l4 4-4 4"/></svg><div class="arrow-dot" style="background:var(--blue)"></div></div>
+        <div class="pipe-node done" style="border-top-color:var(--blue)"><div class="pn-icon">🔵</div><div class="pn-title">Train A</div><div class="pn-sub">Color · 89.06%</div></div>
+        <div class="pipe-arrow"><svg viewBox="0 0 20 10" fill="none" stroke="currentColor"><path d="M0 5h16M12 1l4 4-4 4"/></svg><div class="arrow-dot" style="background:var(--yellow)"></div></div>
+        <div class="pipe-node done" style="border-top-color:var(--yellow)"><div class="pn-icon">🟡</div><div class="pn-title">Train B</div><div class="pn-sub">Seg · 86.13%</div></div>
+        <div class="pipe-arrow"><svg viewBox="0 0 20 10" fill="none" stroke="currentColor"><path d="M0 5h16M12 1l4 4-4 4"/></svg><div class="arrow-dot" style="background:var(--green)"></div></div>
+        <div class="pipe-node done" style="border-top-color:var(--green)"><div class="pn-icon">🟢</div><div class="pn-title">Train C</div><div class="pn-sub">Mix · 87.48%</div></div>
+        <div class="pipe-arrow"><svg viewBox="0 0 20 10" fill="none" stroke="currentColor"><path d="M0 5h16M12 1l4 4-4 4"/></svg><div class="arrow-dot" style="background:#7c5cbf"></div></div>
+        <div class="pipe-node done" style="border-top-color:#7c5cbf"><div class="pn-icon">🔧</div><div class="pn-title">Fine-Tune D</div><div class="pn-sub">88.42%</div></div>
+        <div class="pipe-arrow"><svg viewBox="0 0 20 10" fill="none" stroke="currentColor"><path d="M0 5h16M12 1l4 4-4 4"/></svg><div class="arrow-dot" style="background:var(--red)"></div><div class="arrow-dot" style="background:var(--red)"></div></div>
+        <div class="pipe-node star-node"><div class="pn-icon">⭐</div><div class="pn-title">Train E</div><div class="pn-sub">Selective · 93.88%</div></div>
+        <div class="pipe-arrow"><svg viewBox="0 0 20 10" fill="none" stroke="currentColor"><path d="M0 5h16M12 1l4 4-4 4"/></svg></div>
+        <div class="pipe-node pending"><div class="pn-icon">🔥</div><div class="pn-title">Grad-CAM</div><div class="pn-sub">Heatmaps</div></div>
+        <div class="pipe-arrow"><svg viewBox="0 0 20 10" fill="none" stroke="currentColor"><path d="M0 5h16M12 1l4 4-4 4"/></svg></div>
+        <div class="pipe-node pending"><div class="pn-icon">🌿</div><div class="pn-title">Severity</div><div class="pn-sub">M/Mod/Sev</div></div>
+        <div class="pipe-arrow"><svg viewBox="0 0 20 10" fill="none" stroke="currentColor"><path d="M0 5h16M12 1l4 4-4 4"/></svg></div>
+        <div class="pipe-node pending"><div class="pn-icon">📄</div><div class="pn-title">Paper</div><div class="pn-sub">Publish</div></div>
+      </div>
+      <div style="display:flex;gap:1.5rem;margin-top:1rem;flex-wrap:wrap;">
+        <span style="display:flex;align-items:center;gap:.4rem;font-family:'Azeret Mono',monospace;font-size:clamp(.38rem,.3svw + .15rem,.55rem);opacity:.5;"><span style="width:1rem;height:2px;background:var(--green);display:inline-block;"></span>Done</span>
+        <span style="display:flex;align-items:center;gap:.4rem;font-family:'Azeret Mono',monospace;font-size:clamp(.38rem,.3svw + .15rem,.55rem);opacity:.5;"><span style="width:1rem;height:2px;background:var(--red);display:inline-block;"></span>Original contribution</span>
+        <span style="display:flex;align-items:center;gap:.4rem;font-family:'Azeret Mono',monospace;font-size:clamp(.38rem,.3svw + .15rem,.55rem);opacity:.5;"><span style="width:1rem;height:2px;background:var(--yellow);display:inline-block;"></span>Pending</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ANALYSIS: CM + CR -->
+<section id="analysis">
+  <div class="section-inner">
+    <div class="section-head">
+      <div class="section-num font-mono">03 — ANALYSIS</div>
+      <div class="section-title-text">Confusion Matrices <span class="acc">&</span> Reports</div>
+    </div>
+    <div class="two-col reveal">
+      <!-- CM -->
+      <div class="col-box">
+        <div class="col-title">CONFUSION MATRIX</div>
+        <div class="col-sub">Hover cells to zoom · diagonal = correct predictions</div>
+        <div class="tab-bar" id="cm-tabs">
+          <button class="tb act-a" onclick="switchTab('cm',this,'a')">A</button>
+          <button class="tb" onclick="switchTab('cm',this,'b')">B</button>
+          <button class="tb" onclick="switchTab('cm',this,'c')">C</button>
+          <button class="tb" onclick="switchTab('cm',this,'d')">D</button>
+          <button class="tb" onclick="switchTab('cm',this,'e')">★E</button>
+        </div>
+        <div id="cm-a" class="panel show cm-wrap"></div>
+        <div id="cm-b" class="panel cm-wrap"></div>
+        <div id="cm-c" class="panel cm-wrap"></div>
+        <div id="cm-d" class="panel cm-wrap"></div>
+        <div id="cm-e" class="panel cm-wrap"></div>
+      </div>
+      <!-- CR -->
+      <div class="col-box">
+        <div class="col-title">CLASSIFICATION REPORT</div>
+        <div class="col-sub">Precision · Recall · F1-Score · Support</div>
+        <div class="tab-bar" id="cr-tabs">
+          <button class="tb act-a" onclick="switchTab('cr',this,'a')">A</button>
+          <button class="tb" onclick="switchTab('cr',this,'b')">B</button>
+          <button class="tb" onclick="switchTab('cr',this,'c')">C</button>
+          <button class="tb" onclick="switchTab('cr',this,'d')">D</button>
+          <button class="tb" onclick="switchTab('cr',this,'e')">★E</button>
+        </div>
+        <div id="cr-a" class="panel show"></div>
+        <div id="cr-b" class="panel"></div>
+        <div id="cr-c" class="panel"></div>
+        <div id="cr-d" class="panel"></div>
+        <div id="cr-e" class="panel"></div>
+      </div>
+    </div>
+
+    <!-- PER-CLASS TABLE -->
+    <div class="chart-wrap reveal" style="margin-top:2px;border-top:none;">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title-text">Per-Class Accuracy — All 5 Strategies</div>
+          <div class="chart-sub-text">Highlighted = best result for that class</div>
+        </div>
+      </div>
+      <div style="overflow-x:auto;padding:1rem;">
+        <table class="pct">
+          <thead><tr>
+            <th style="text-align:left;width:140px;">Disease Class</th>
+            <th style="color:var(--blue);">A</th>
+            <th style="color:#7a5f00;">B</th>
+            <th style="color:#0b6b62;">C</th>
+            <th style="color:#5c3a9a;">D</th>
+            <th style="color:var(--red);">E ★</th>
+            <th>E−A</th><th>E−B</th><th>Winner</th>
+          </tr></thead>
+          <tbody>
+            <tr><td>Bacterial spot</td><td class="best-a">99.3%</td><td>78.7%</td><td>90.0%</td><td>88.7%</td><td>98.0%</td><td class="dn">−1.3%</td><td class="dp">+19.3%</td><td><span class="wp wp-a">A</span></td></tr>
+            <tr><td>Early blight</td><td>82.0%</td><td>74.7%</td><td class="danger-cell">62.0%</td><td>74.7%</td><td class="best-e">82.7%</td><td class="dp">+0.7%</td><td class="dp">+8.0%</td><td><span class="wp wp-e">E</span></td></tr>
+            <tr><td>Late blight</td><td>89.3%</td><td>92.0%</td><td class="best-c">94.7%</td><td>91.3%</td><td>88.0%</td><td class="dn">−1.3%</td><td class="dn">−4.0%</td><td><span class="wp wp-c">C</span></td></tr>
+            <tr><td>Leaf Mold</td><td>92.3%</td><td>79.0%</td><td>92.0%</td><td>92.3%</td><td class="best-e">95.1%</td><td class="dp">+2.8%</td><td class="dp">+16.1%</td><td><span class="wp wp-e">E</span></td></tr>
+            <tr><td>Septoria leaf spot</td><td>85.3%</td><td>90.7%</td><td>89.3%</td><td>89.3%</td><td class="best-e">97.3%</td><td class="dp">+12.0%</td><td class="dp">+6.6%</td><td><span class="wp wp-e">E</span></td></tr>
+            <tr><td>Spider mites</td><td>77.3%</td><td>89.3%</td><td>88.7%</td><td>85.3%</td><td class="best-e">96.7%</td><td class="dp">+19.4%</td><td class="dp">+7.4%</td><td><span class="wp wp-e">E</span></td></tr>
+            <tr><td>Target Spot</td><td>86.0%</td><td>85.3%</td><td>87.3%</td><td class="danger-cell">76.7%</td><td class="best-e">91.3%</td><td class="dp">+5.3%</td><td class="dp">+6.0%</td><td><span class="wp wp-e">E</span></td></tr>
+            <tr><td>Yellow Leaf Curl</td><td>95.3%</td><td class="best-b">96.7%</td><td>90.7%</td><td>96.0%</td><td class="best-e">96.7%</td><td class="dp">+1.4%</td><td class="dz">±0%</td><td><span class="wp wp-e">E</span></td></tr>
+            <tr><td>Mosaic virus</td><td>91.1%</td><td>82.1%</td><td>93.8%</td><td>96.4%</td><td class="best-e">97.3%</td><td class="dp">+6.2%</td><td class="dp">+15.2%</td><td><span class="wp wp-e">E</span></td></tr>
+            <tr><td>Healthy</td><td>94.0%</td><td>90.0%</td><td>88.0%</td><td class="best-d">98.7%</td><td>96.7%</td><td class="dp">+2.7%</td><td class="dp">+6.7%</td><td><span class="wp wp-d">D</span></td></tr>
+          </tbody>
+          <tfoot><tr>
+            <td>Overall</td><td>89.06%</td><td>86.13%</td><td>87.48%</td><td>88.42%</td>
+            <td style="color:var(--red);font-size:clamp(.55rem,.5svw + .22rem,.85rem);">93.88%</td>
+            <td class="dp">+4.82%</td><td class="dp">+7.75%</td><td></td>
+          </tr></tfoot>
+        </table>
+      </div>
+      <div class="win-strip">
+        <div class="win-box"><div class="win-num" style="color:var(--blue)">1</div><div class="win-label" style="color:var(--blue)">Strategy A</div><div class="win-cls">Bacterial spot</div></div>
+        <div class="win-box"><div class="win-num" style="opacity:.3">0</div><div class="win-label">Strategy B</div><div class="win-cls">No outright wins</div></div>
+        <div class="win-box"><div class="win-num" style="color:#0b6b62">1</div><div class="win-label" style="color:#0b6b62">Strategy C</div><div class="win-cls">Late blight</div></div>
+        <div class="win-box"><div class="win-num" style="color:#5c3a9a">1</div><div class="win-label" style="color:#5c3a9a">Strategy D</div><div class="win-cls">Healthy (98.7%)</div></div>
+        <div class="win-box" style="background:rgba(254,109,115,.05)"><div class="win-num" style="color:var(--red)">7</div><div class="win-label" style="color:var(--red)">★ Strategy E</div><div class="win-cls">Dominates 7/10 classes</div></div>
+      </div>
+    </div>
+
+    <!-- 5-STRATEGY CHART -->
+    <div class="chart-wrap reveal" style="margin-top:2px;border-top:none;">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title-text">Per-Class Comparison — All 5 Strategies</div>
+          <div class="chart-sub-text">Grouped bar chart</div>
+        </div>
+        <div class="legend">
+          <span class="leg-item"><span class="leg-dot" style="background:var(--blue)"></span>A</span>
+          <span class="leg-item"><span class="leg-dot" style="background:var(--yellow)"></span>B</span>
+          <span class="leg-item"><span class="leg-dot" style="background:var(--green)"></span>C</span>
+          <span class="leg-item"><span class="leg-dot" style="background:#7c5cbf"></span>D</span>
+          <span class="leg-item"><span class="leg-dot" style="background:var(--red)"></span>E</span>
+        </div>
+      </div>
+      <div class="chart-body">
+        <div style="position:relative;height:clamp(200px,35svh,300px);">
+          <canvas id="mainChart" role="img" aria-label="Per-class accuracy grouped bar chart for all 5 strategies">Per-class accuracy across 5 strategies A B C D E.</canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ROUTING TABLE -->
+<section id="routing">
+  <div class="section-inner">
+    <div class="section-head">
+      <div class="section-num font-mono">04 — STRATEGY E</div>
+      <div class="section-title-text"><span class="acc">★</span> Class Routing Table</div>
+    </div>
+    <p style="font-family:'Azeret Mono',monospace;font-size:clamp(.42rem,.38svw + .2rem,.65rem);opacity:.5;margin-bottom:1.5rem;max-width:50rem;line-height:1.8;">Per-class domain assignment derived empirically from A vs B per-class analysis. No random mixing — intelligent data-driven composition that proves the hypothesis.</p>
+    <div class="routing-grid reveal">
+      <div class="route-col">
+        <div class="route-head rh-color">🔵 Color Domain · 4 classes</div>
+        <div class="route-item"><div class="ri-name">Bacterial spot</div><div class="ri-rationale">A=99.3% vs B=78.7% — color contrast critical (−20.6%)</div><div class="ri-result">E: 98.0%</div></div>
+        <div class="route-item"><div class="ri-name">Early blight</div><div class="ri-rationale">A=82.0% best; C collapsed to 62% under random mix</div><div class="ri-result">E: 82.7%</div></div>
+        <div class="route-item"><div class="ri-name">Leaf Mold</div><div class="ri-rationale">A=92.3% vs B=79.0% — yellow-green color is discriminator</div><div class="ri-result">E: 95.1% ↑</div></div>
+        <div class="route-item"><div class="ri-name">Healthy</div><div class="ri-rationale">A=94.0% vs B=90.0% — vibrant green = healthy signal</div><div class="ri-result">E: 96.7% ↑</div></div>
+      </div>
+      <div class="route-col">
+        <div class="route-head rh-seg">🟡 Segmented Domain · 3 classes</div>
+        <div class="route-item"><div class="ri-name">Spider mites</div><div class="ri-rationale">B=89.3% vs A=77.3% — texture pattern detection (+12%)</div><div class="ri-result">E: 96.7% ↑↑</div></div>
+        <div class="route-item"><div class="ri-name">Septoria leaf spot</div><div class="ri-rationale">B=90.7% vs A=85.3% — spot shape clearer on black bg</div><div class="ri-result">E: 97.3% ↑↑</div></div>
+        <div class="route-item"><div class="ri-name">Yellow Leaf Curl</div><div class="ri-rationale">B=96.7% consistently best — curl is pure structural shape</div><div class="ri-result">E: 96.7%</div></div>
+      </div>
+      <div class="route-col">
+        <div class="route-head rh-mix">🟢 Mixed Domain · 3 classes</div>
+        <div class="route-item"><div class="ri-name">Late blight</div><div class="ri-rationale">C=94.7% best — benefits from both visual modalities</div><div class="ri-result">E: 88.0% ↓ (edge case)</div></div>
+        <div class="route-item"><div class="ri-name">Target Spot</div><div class="ri-rationale">C=87.3% best — mixed visual variety helps recognition</div><div class="ri-result">E: 91.3% ↑</div></div>
+        <div class="route-item"><div class="ri-name">Mosaic virus</div><div class="ri-rationale">D=96.4% best with combined domain exposure</div><div class="ri-result">E: 97.3% ↑↑</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- OBSERVATIONS -->
+<section id="observations">
+  <div class="section-inner">
+    <div class="section-head">
+      <div class="section-num font-mono">05 — INSIGHTS</div>
+      <div class="section-title-text">Key <span class="acc">Observations</span></div>
+    </div>
+    <div class="obs-grid reveal">
+      <div class="obs-card">
+        <div class="obs-head">
+          <div class="obs-dot" style="background:var(--blue)"></div>
+          <div class="obs-title">Strategy A — Color Only</div>
+          <div class="obs-acc" style="color:var(--blue)">89.06%</div>
+        </div>
+        <ul class="obs-list">
+          <li class="ok">Highest baseline — color context is the strongest global signal for MobileNetV2</li>
+          <li class="ok">Bacterial spot 99.3% — water-soaked lesion color contrast against green leaf is the primary discriminator</li>
+          <li class="ok">Healthy leaf 94% — vibrant green is a strong positive class indicator</li>
+          <li class="warn">Spider mites weakest at 77.3% — tiny mite damage masked by background color noise</li>
+          <li class="info">Color-dominant diseases prefer this strategy consistently across all experiments</li>
+        </ul>
+        <div class="obs-sum">MobileNetV2 pretrained on ImageNet naturally leverages color-contrast — background carries disease information, not just noise</div>
+      </div>
+      <div class="obs-card">
+        <div class="obs-head">
+          <div class="obs-dot" style="background:var(--yellow)"></div>
+          <div class="obs-title">Strategy B — Segmented</div>
+          <div class="obs-acc" style="color:#7a5f00">86.13%</div>
+        </div>
+        <ul class="obs-list">
+          <li class="ok">Spider mites +12% (77.3%→89.3%) — texture patterns clearer without background</li>
+          <li class="ok">Septoria +5.4% — spot shapes more visible on clean black background</li>
+          <li class="ok">Yellow Curl 96.7% — curl shape is a pure structural feature, color-independent</li>
+          <li class="bad">Bacterial spot collapsed −20.6% — color-contrast signal destroyed by segmentation</li>
+          <li class="bad">Leaf Mold dropped −13.3% — yellow-green color difference was the key discriminator</li>
+        </ul>
+        <div class="obs-sum">Background removal is double-edged — helps texture/shape diseases, destroys color-contrast disease signals</div>
+      </div>
+      <div class="obs-card">
+        <div class="obs-head">
+          <div class="obs-dot" style="background:var(--green)"></div>
+          <div class="obs-title">Strategy C — Mixed 50/50</div>
+          <div class="obs-acc" style="color:#0b6b62">87.48%</div>
+        </div>
+        <ul class="obs-list">
+          <li class="ok">Late blight 94.7% — consistently improves A→B→C, responds to visual variety</li>
+          <li class="ok">Mosaic virus 93.8% — combining modalities recovers the segmented drop</li>
+          <li class="bad">Early blight collapsed 82%→62% (−20%) — strongest single failure in the study</li>
+          <li class="warn">Overall sits between A and B — random mixing is NOT best of both worlds</li>
+          <li class="info">Early blight's 20% collapse is the strongest motivation for Strategy E class-aware routing</li>
+        </ul>
+        <div class="obs-sum">Random 50/50 mixing fails for color-dominant classes — directly motivates per-class selective assignment</div>
+      </div>
+      <div class="obs-card">
+        <div class="obs-head">
+          <div class="obs-dot" style="background:var(--red)"></div>
+          <div class="obs-title">★ Strategy E — Selective</div>
+          <div class="obs-acc" style="color:var(--red)">93.88%</div>
+        </div>
+        <ul class="obs-list">
+          <li class="ok">93.88% — best result by far, +4.82% over Strategy A (previous best)</li>
+          <li class="ok">Spider mites 96.7% (+19.4% vs A) — biggest per-class gain in the entire study</li>
+          <li class="ok">Yellow Curl: 100% precision — perfect precision for this class</li>
+          <li class="ok">3-run variance 0.00% — fully reproducible (seeds fixed, CPU deterministic)</li>
+          <li class="ok">Routing validated for 7/10 classes — each domain outperformed alternatives</li>
+          <li class="warn">Late blight dropped to 88% vs C's 94.7% — mixed domain underperformed here</li>
+        </ul>
+        <div class="obs-sum">Proves the hypothesis: class-aware data composition outperforms uniform strategies — a genuinely original contribution not applied to tomato disease classification before</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PENDING -->
+<section id="pending">
+  <div class="section-inner">
+    <div class="section-head">
+      <div class="section-num font-mono">06 — NEXT</div>
+      <div class="section-title-text">Pending <span class="acc">Steps</span></div>
+    </div>
+    <div class="pending-grid reveal">
+      <div class="pending-card clickable">
+        <div class="pc-icon">🔥</div>
+        <div class="pc-title">Grad-CAM</div>
+        <div class="pc-desc">Gradient-weighted class activation maps on all 5 models. Same leaf → 5 heatmaps showing what each strategy learned to focus on.</div>
+      </div>
+      <div class="pending-card clickable">
+        <div class="pc-icon">🌿</div>
+        <div class="pc-title">Severity Estimator</div>
+        <div class="pc-desc">Pixel-area regression. Generates mild / moderate / severe labels from lesion coverage ratio. No severity annotations exist in PlantVillage.</div>
+      </div>
+      <div class="pending-card clickable">
+        <div class="pc-icon">🛡️</div>
+        <div class="pc-title">Robustness Testing</div>
+        <div class="pc-desc">Test best model under noise, brightness shifts, and occlusion. Validates real-world stability of the 93.88% result.</div>
+      </div>
+      <div class="pending-card clickable">
+        <div class="pc-icon">📄</div>
+        <div class="pc-title">Research Paper</div>
+        <div class="pc-desc">Comp.Elec.Agri · IEEE Access · AppliedAI. Full 5-strategy comparison with Strategy E as the original contribution.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-text">TensorFlow 2.10 · Python 3.11 · MobileNetV2 · PlantVillage</div>
+  <div class="footer-text">Jatin Bhanot · TomatoClassification · 2024–25</div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+// ── CURSOR (exact behaviour from ikjunim.com) ────────────────
+const dot=document.getElementById('cursor-dot');
+const ring=document.getElementById('cursor-ring');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{
+  mx=e.clientX;my=e.clientY;
+  dot.style.left=mx+'px';dot.style.top=my+'px';
+});
+(function animRing(){
+  rx+=(mx-rx)*0.1;ry+=(my-ry)*0.1;
+  ring.style.left=rx+'px';ring.style.top=ry+'px';
+  requestAnimationFrame(animRing);
+})();
+document.querySelectorAll('button,a,.clickable,.strat-card,.pipe-node,.route-item,.pending-card').forEach(el=>{
+  el.addEventListener('mouseenter',()=>{dot.style.width='18px';dot.style.height='18px';ring.style.width='50px';ring.style.height='50px';});
+  el.addEventListener('mouseleave',()=>{dot.style.width='12px';dot.style.height='12px';ring.style.width='36px';ring.style.height='36px';});
+});
+
+// ── NAV SCROLL ───────────────────────────────────────────────
+function scrollTo(id){document.getElementById(id)?.scrollIntoView({behavior:'smooth'});}
+const navLinks=document.querySelectorAll('.nav-link');
+window.addEventListener('scroll',()=>{
+  const sections=['hero','results','pipeline','analysis','routing','observations','pending'];
+  let cur='results';
+  sections.forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&el.getBoundingClientRect().top<window.innerHeight/2)cur=id;
+  });
+  navLinks.forEach(b=>{
+    b.classList.toggle('active',b.getAttribute('onclick')?.includes(cur==='hero'?'results':cur));
+  });
+});
+
+// ── BAR ANIMATIONS (scroll-triggered) ───────────────────────
+const barObs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      e.target.querySelectorAll('.sc-bar-fill[data-w]').forEach(b=>{
+        setTimeout(()=>{b.style.width=b.dataset.w;},200);
+      });
+    }
+  });
+},{threshold:0.1});
+document.querySelectorAll('.strat-grid').forEach(el=>barObs.observe(el));
+
+// ── SCROLL REVEAL ────────────────────────────────────────────
+const revObs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('in');});
+},{threshold:0.08});
+document.querySelectorAll('.reveal').forEach(el=>revObs.observe(el));
+
+// ── DATA ─────────────────────────────────────────────────────
+const shortL=['Bact.','E.Blt','L.Blt','LMold','Sept.','Spider','Target','YCurl','Mosaic','Hlthy'];
+const cmData={
+  a:[[149,0,0,0,1,0,0,0,0,0],[6,123,2,1,3,4,8,1,1,1],[1,11,134,2,1,0,1,0,0,0],[3,1,0,132,4,1,2,0,0,0],[8,6,2,2,128,0,3,0,0,1],[1,1,2,3,1,116,21,2,1,2],[3,2,2,2,0,8,129,0,0,4],[2,1,0,2,0,0,1,143,1,0],[0,0,0,2,2,1,0,0,51,0],[0,0,1,0,0,1,7,0,0,141]],
+  b:[[118,4,1,0,17,0,10,0,0,0],[3,112,6,1,12,1,9,2,0,4],[0,4,138,3,1,0,2,1,0,1],[0,4,6,113,6,2,8,0,1,3],[2,2,1,1,136,2,6,0,0,0],[0,2,1,1,0,134,4,0,0,8],[3,2,2,0,1,6,128,0,0,8],[0,0,0,1,1,3,0,145,0,0],[0,0,0,1,7,1,0,0,46,1],[0,1,0,0,0,4,10,0,0,135]],
+  c:[[135,0,3,2,6,0,3,0,0,1],[6,93,12,4,14,0,16,2,1,2],[0,1,142,3,2,0,2,0,0,0],[2,0,3,138,0,2,3,0,1,1],[1,4,1,3,134,0,7,0,0,0],[0,2,0,1,3,133,10,0,0,1],[2,1,1,2,2,5,131,0,0,6],[0,0,0,2,5,4,2,136,1,0],[0,0,0,1,2,2,1,0,105,1],[0,1,0,0,0,3,14,0,0,132]],
+  d:[[133,2,0,0,7,0,6,1,0,1],[4,112,6,1,9,4,11,0,0,3],[0,3,137,6,1,1,1,0,0,1],[1,0,1,132,1,1,2,0,1,4],[6,1,1,0,134,2,6,0,0,0],[1,1,0,1,1,128,6,0,0,12],[3,3,2,1,0,3,115,0,0,23],[1,0,0,2,0,3,0,144,0,0],[0,0,0,1,1,0,0,0,54,0],[0,0,1,0,0,1,0,0,0,148]],
+  e:[[147,1,0,0,1,0,1,0,0,0],[5,124,4,1,5,1,8,1,0,1],[1,2,132,4,1,1,7,0,1,1],[1,0,2,136,1,1,2,0,0,0],[0,1,1,0,146,1,1,0,0,0],[0,1,0,0,1,145,2,0,0,1],[0,1,2,0,2,3,137,0,0,5],[0,0,1,0,1,1,0,145,1,1],[0,0,1,0,0,0,0,0,109,2],[0,0,1,0,0,1,3,0,0,145]]
+};
+const cmAccent={a:'#227c9d',b:'#c89500',c:'#17c3b2',d:'#7c5cbf',e:'#fe6d73'};
+
+function renderCM(s){
+  const d=cmData[s],col=cmAccent[s],max=Math.max(...d.flat()),n=10;
+  let h='<div style="overflow-x:auto"><table style="border-collapse:collapse;font-family:Azeret Mono,monospace;font-size:clamp(.35rem,.28svw + .15rem,.52rem)"><thead><tr><td style="width:65px"></td>';
+  for(let j=0;j<n;j++)h+=`<td style="width:30px;text-align:center;vertical-align:bottom;padding-bottom:3px"><span style="writing-mode:vertical-lr;transform:rotate(180deg);font-size:clamp(.3rem,.22svw + .12rem,.44rem);opacity:.45;white-space:nowrap">${shortL[j]}</span></td>`;
+  h+='</tr></thead><tbody>';
+  for(let i=0;i<n;i++){
+    h+=`<tr><td style="text-align:right;padding-right:4px;font-size:clamp(.3rem,.22svw + .12rem,.44rem);opacity:.45;white-space:nowrap">${shortL[i]}</td>`;
+    for(let j=0;j<n;j++){
+      const v=d[i][j],a=v/max;
+      let bg,tc;
+      if(i===j){bg=col;tc='#faf9f6';}
+      else if(v===0){bg='#f5f4f1';tc='#e0deda';}
+      else{const op=0.06+a*0.3;bg=`rgba(24,23,23,${op})`;tc=a>.3?'#181717':'rgba(24,23,23,.4)';}
+      h+=`<td><div style="width:28px;height:24px;background:${bg};color:${tc};display:flex;align-items:center;justify-content:center;border-radius:2px;font-size:clamp(.3rem,.22svw + .1rem,.44rem);font-weight:${i===j?900:400};transition:transform .15s;border:1px solid rgba(24,23,23,.06)" onmouseover="this.style.transform='scale(1.3)';this.style.zIndex='10';this.style.position='relative'" onmouseout="this.style.transform=''">${v}</div></td>`;
+    }
+    h+='</tr>';
+  }
+  h+='</tbody></table></div>';
+  return h;
+}
+
+const crData={
+  a:{rows:[['Bacterial spot',.861,.993,.923,150],['Early blight',.848,.820,.834,150],['Late blight',.937,.893,.915,150],['Leaf Mold',.904,.923,.913,143],['Septoria',.914,.853,.883,150],['Spider mites',.885,.773,.826,150],['Target Spot',.750,.860,.801,150],['Yellow Curl',.979,.953,.966,150],['Mosaic virus',.944,.911,.927,56],['healthy',.946,.940,.943,150]],acc:.891,mac:[.897,.892,.893],wtd:[.894,.891,.891]},
+  b:{rows:[['Bacterial spot',.937,.787,.855,150],['Early blight',.855,.747,.797,150],['Late blight',.890,.920,.905,150],['Leaf Mold',.934,.790,.856,143],['Septoria',.751,.907,.822,150],['Spider mites',.876,.893,.884,150],['Target Spot',.723,.853,.783,150],['Yellow Curl',.980,.967,.973,150],['Mosaic virus',.979,.821,.893,56],['healthy',.844,.900,.871,150]],acc:.861,mac:[.877,.858,.864],wtd:[.870,.861,.862]},
+  c:{rows:[['Bacterial spot',.925,.900,.912,150],['Early blight',.912,.620,.738,150],['Late blight',.877,.947,.910,150],['Leaf Mold',.885,.920,.902,150],['Septoria',.798,.893,.843,150],['Spider mites',.893,.887,.890,150],['Target Spot',.693,.873,.773,150],['Yellow Curl',.986,.907,.944,150],['Mosaic virus',.972,.938,.955,112],['healthy',.917,.880,.898,150]],acc:.875,mac:[.886,.876,.876],wtd:[.883,.875,.874]},
+  d:{rows:[['Bacterial spot',.893,.887,.890,150],['Early blight',.918,.747,.824,150],['Late blight',.926,.913,.919,150],['Leaf Mold',.917,.923,.920,143],['Septoria',.870,.893,.882,150],['Spider mites',.895,.853,.874,150],['Target Spot',.782,.767,.774,150],['Yellow Curl',.993,.960,.976,150],['Mosaic virus',.982,.964,.973,56],['Healthy',.771,.987,.865,150]],acc:.884,mac:[.895,.889,.890],wtd:[.889,.884,.884]},
+  e:{rows:[['Bacterial spot',.936,.980,.958,150],['Early blight',.919,.827,.870,150],['Late blight',.964,.880,.920,150],['Leaf Mold',.938,.951,.944,143],['Septoria',.936,.973,.954,150],['Spider mites',.924,.967,.945,150],['Target Spot',.851,.913,.881,150],['Yellow Curl',1.000,.967,.983,150],['Mosaic virus',.973,.973,.973,112],['Healthy',.967,.967,.967,150]],acc:.939,mac:[.941,.940,.940],wtd:[.940,.939,.939]}
+};
+
+function fv(v){
+  const n=parseFloat(v);
+  let c='';
+  if(n>=.95)c='vh';else if(n>=.80)c='';else if(n>=.73)c='vm';else c='vl';
+  return `<span class="${c}">${n.toFixed(3)}</span>`;
+}
+function renderCR(s){
+  const d=crData[s];
+  let h=`<table class="rtable"><thead><tr><th style="text-align:left">Class</th><th>Prec</th><th>Recall</th><th>F1</th><th>Supp</th></tr></thead><tbody>`;
+  for(const r of d.rows)h+=`<tr><td>${r[0]}</td><td>${fv(r[1])}</td><td>${fv(r[2])}</td><td>${fv(r[3])}</td><td style="opacity:.35">${r[4]}</td></tr>`;
+  const tot=d.rows.reduce((s,r)=>s+r[4],0);
+  h+=`</tbody><tfoot><tr><td>Accuracy</td><td></td><td></td><td style="color:var(--red);font-weight:900">${d.acc.toFixed(3)}</td><td style="opacity:.35">${tot}</td></tr><tr><td>Macro avg</td><td>${fv(d.mac[0])}</td><td>${fv(d.mac[1])}</td><td>${fv(d.mac[2])}</td><td></td></tr><tr><td>Weighted avg</td><td>${fv(d.wtd[0])}</td><td>${fv(d.wtd[1])}</td><td>${fv(d.wtd[2])}</td><td></td></tr></tfoot></table>`;
+  return h;
+}
+
+['a','b','c','d','e'].forEach(s=>{
+  document.getElementById(`cm-${s}`).innerHTML=renderCM(s);
+  document.getElementById(`cr-${s}`).innerHTML=renderCR(s);
+});
+
+// ── TAB SWITCHING ────────────────────────────────────────────
+const actMap={a:'act-a',b:'act-b',c:'act-c',d:'act-d',e:'act-e'};
+function switchTab(group,btn,strat){
+  btn.closest('.tab-bar').querySelectorAll('.tb').forEach(b=>b.className='tb');
+  btn.classList.add(actMap[strat]);
+  document.querySelectorAll(`[id^="${group}-"]`).forEach(p=>p.classList.remove('show'));
+  document.getElementById(`${group}-${strat}`).classList.add('show');
+}
+
+// ── MAIN CHART ───────────────────────────────────────────────
+new Chart(document.getElementById('mainChart'),{
+  type:'bar',
+  data:{
+    labels:['Bact.Spot','Early Blight','Late Blight','Leaf Mold','Septoria','Spider Mites','Target Spot','Yellow Curl','Mosaic','Healthy'],
+    datasets:[
+      {label:'A',data:[99.3,82.0,89.3,92.3,85.3,77.3,86.0,95.3,91.1,94.0],backgroundColor:'#227c9d',borderRadius:1},
+      {label:'B',data:[78.7,74.7,92.0,79.0,90.7,89.3,85.3,96.7,82.1,90.0],backgroundColor:'#ffcb77',borderRadius:1},
+      {label:'C',data:[90.0,62.0,94.7,92.0,89.3,88.7,87.3,90.7,93.8,88.0],backgroundColor:'#17c3b2',borderRadius:1},
+      {label:'D',data:[88.7,74.7,91.3,92.3,89.3,85.3,76.7,96.0,96.4,98.7],backgroundColor:'#7c5cbf',borderRadius:1},
+      {label:'E',data:[98.0,82.7,88.0,95.1,97.3,96.7,91.3,96.7,97.3,96.7],backgroundColor:'#fe6d73',borderRadius:1},
+    ]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{
+      legend:{display:false},
+      tooltip:{
+        callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}%`},
+        titleFont:{family:'Azeret Mono'},bodyFont:{family:'Azeret Mono'}
+      }
+    },
+    scales:{
+      y:{min:55,max:103,ticks:{callback:v=>v+'%',font:{family:'Azeret Mono',size:10},color:'rgba(24,23,23,.4)'},grid:{color:'rgba(24,23,23,.06)'}},
+      x:{ticks:{font:{family:'Azeret Mono',size:9},color:'rgba(24,23,23,.4)',maxRotation:30},grid:{display:false}}
+    }
+  }
+});
+</script>
+</body>
+</html>

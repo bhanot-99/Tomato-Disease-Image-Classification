@@ -1,0 +1,14 @@
+# Python environment
+venv/
+__pycache__/
+*.py[cod]
+
+# Data (Crucial: Prevents uploading thousands of images)
+dataset/
+
+# Models (Prevents uploading large .h5 files)
+models/*.h5
+
+# System files
+.DS_Store
+Thumbs.db

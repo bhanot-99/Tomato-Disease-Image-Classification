@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TomatoClassification — Research Architecture</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: #f0f2f5;
+  font-family: 'Inter', sans-serif;
+  color: #1e2a3a;
+  overflow-x: auto;
+}
+
+.page {
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 28px 24px 40px;
+}
+
+/* ─── HEADER ─────────────────────────────────────────── */
+.header {
+  background: #1e2a3a;
+  border-radius: 10px;
+  padding: 22px 32px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.header-title { color: #f0f2f5; font-size: 20px; font-weight: 700; letter-spacing: 0.3px; }
+.header-sub   { color: #8fa3b8; font-size: 12px; margin-top: 4px; font-family: 'JetBrains Mono'; }
+.header-meta  { text-align: right; color: #6a8099; font-size: 11px; line-height: 1.7; }
+
+/* ─── SECTION TITLES ─────────────────────────────────── */
+.section-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #5a7a9a;
+  margin-bottom: 10px;
+  padding-left: 2px;
+}
+
+/* ─── STRATEGY CARDS ─────────────────────────────────── */
+.strategy-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.strat-card {
+  background: #ffffff;
+  border: 1.5px solid #dde3ea;
+  border-radius: 10px;
+  padding: 16px 18px;
+  position: relative;
+  overflow: hidden;
+}
+.strat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  border-radius: 10px 10px 0 0;
+}
+.strat-a::before { background: #3b7dd8; }
+.strat-b::before { background: #d97a3a; }
+.strat-c::before { background: #3aab6a; }
+.strat-d::before { background: #7a5cb8; }
+
+.strat-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.strat-a .strat-label { color: #3b7dd8; }
+.strat-b .strat-label { color: #d97a3a; }
+.strat-c .strat-label { color: #3aab6a; }
+.strat-d .strat-label { color: #7a5cb8; }
+
+.strat-name  { font-size: 14px; font-weight: 700; color: #1e2a3a; margin-bottom: 10px; }
+.strat-acc   { font-size: 30px; font-weight: 700; line-height: 1; }
+.strat-a .strat-acc { color: #2563ba; }
+.strat-b .strat-acc { color: #c4631a; }
+.strat-c .strat-acc { color: #1e8f54; }
+.strat-d .strat-acc { color: #6340a8; }
+
+.strat-acc-sub { font-size: 11px; color: #7a8ea0; margin-top: 2px; margin-bottom: 10px; }
+
+.strat-row { display: flex; justify-content: space-between; font-size: 11px; color: #5a7a90; padding: 3px 0; border-top: 1px solid #eef0f3; }
+.strat-row span:last-child { font-weight: 600; color: #1e2a3a; font-family: 'JetBrains Mono'; font-size: 10.5px; }
+
+.badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  padding: 2px 7px;
+  border-radius: 20px;
+  margin-top: 10px;
+  text-transform: uppercase;
+}
+.badge-gold   { background: #fef3c7; color: #92620a; }
+.badge-silver { background: #f0f2f5; color: #5a6a7a; }
+.badge-bronze { background: #fdf2ed; color: #9a5520; }
+.badge-purple { background: #f3eeff; color: #5a30a0; }
+
+/* ─── ARCHITECTURE PIPELINE ─────────────────────────── */
+.pipeline-wrap {
+  background: #ffffff;
+  border: 1.5px solid #dde3ea;
+  border-radius: 10px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+}
+
+.pipeline {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  overflow-x: auto;
+  padding: 10px 0;
+}
+
+.pipe-block {
+  flex-shrink: 0;
+  background: #f4f6f9;
+  border: 1.5px solid #cdd5de;
+  border-radius: 8px;
+  padding: 12px 14px;
+  min-width: 130px;
+  text-align: center;
+}
+.pipe-block .pb-icon { font-size: 18px; margin-bottom: 5px; }
+.pipe-block .pb-title { font-size: 11px; font-weight: 700; color: #1e2a3a; }
+.pipe-block .pb-sub { font-size: 9px; color: #6a8099; margin-top: 2px; font-family: 'JetBrains Mono'; }
+
+.pipe-block.accent-a { background: #eef4ff; border-color: #93b8e8; }
+.pipe-block.accent-b { background: #fff5ee; border-color: #e8b88a; }
+.pipe-block.accent-c { background: #eefff5; border-color: #7acf9e; }
+.pipe-block.accent-d { background: #f4eeff; border-color: #b89adf; }
+.pipe-block.accent-out { background: #1e2a3a; border-color: #1e2a3a; }
+.pipe-block.accent-out .pb-title { color: #e8f0f8; }
+.pipe-block.accent-out .pb-sub   { color: #8fa8c0; }
+
+.pipe-arrow {
+  flex-shrink: 0;
+  width: 28px;
+  text-align: center;
+  color: #9ab0c4;
+  font-size: 16px;
+}
+
+/* ─── PER-CLASS TABLE ────────────────────────────────── */
+.table-wrap {
+  background: #ffffff;
+  border: 1.5px solid #dde3ea;
+  border-radius: 10px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+thead tr {
+  background: #1e2a3a;
+}
+thead th {
+  color: #c8d8e8;
+  padding: 10px 12px;
+  font-weight: 600;
+  font-size: 10.5px;
+  letter-spacing: 0.5px;
+  text-align: center;
+}
+thead th:first-child { text-align: left; }
+
+tbody tr:nth-child(even) { background: #f7f9fc; }
+tbody tr:hover { background: #eef2f7; }
+
+tbody td {
+  padding: 9px 12px;
+  text-align: center;
+  color: #2a3a4a;
+  font-family: 'JetBrains Mono';
+  font-size: 11px;
+  border-bottom: 1px solid #edf0f4;
+}
+tbody td:first-child {
+  text-align: left;
+  font-family: 'Inter';
+  font-weight: 600;
+  font-size: 12px;
+  color: #1e2a3a;
+}
+
+.cell-a  { color: #2563ba !important; font-weight: 600 !important; }
+.cell-b  { color: #c4631a !important; font-weight: 600 !important; }
+.cell-c  { color: #1e8f54 !important; font-weight: 600 !important; }
+.cell-d  { color: #6340a8 !important; font-weight: 600 !important; }
+
+.cell-best-a { background: #deeaff !important; color: #1a4fa0 !important; font-weight: 700 !important; border-radius: 4px; }
+.cell-best-b { background: #ffe8d4 !important; color: #a04010 !important; font-weight: 700 !important; border-radius: 4px; }
+.cell-best-c { background: #d4f5e4 !important; color: #106038 !important; font-weight: 700 !important; border-radius: 4px; }
+.cell-best-d { background: #ebe0ff !important; color: #4a2090 !important; font-weight: 700 !important; border-radius: 4px; }
+
+.cell-danger { color: #c03030 !important; }
+.cell-warn   { color: #a06000 !important; }
+
+.diff-pos { color: #1a7a40; font-size: 10px; }
+.diff-neg { color: #c03030; font-size: 10px; }
+
+.winner-pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: 'Inter';
+}
+.wp-a { background: #deeaff; color: #1a4fa0; }
+.wp-b { background: #ffe8d4; color: #a04010; }
+.wp-c { background: #d4f5e4; color: #106038; }
+.wp-d { background: #ebe0ff; color: #4a2090; }
+
+tfoot tr { background: #2a3a4e !important; }
+tfoot td {
+  color: #c8d8e8 !important;
+  font-weight: 700 !important;
+  font-size: 12px !important;
+  padding: 11px 12px !important;
+  border: none !important;
+}
+
+/* ─── WIN SUMMARY STRIP ──────────────────────────────── */
+.win-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-top: 14px;
+}
+.win-box {
+  text-align: center;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1.5px solid;
+}
+.win-box-a { background: #eef4ff; border-color: #93b8e8; }
+.win-box-b { background: #fff5ee; border-color: #e8b88a; }
+.win-box-c { background: #eefff5; border-color: #7acf9e; }
+.win-box-d { background: #f4eeff; border-color: #b89adf; }
+.win-count { font-size: 26px; font-weight: 700; }
+.win-box-a .win-count { color: #2563ba; }
+.win-box-b .win-count { color: #c4631a; }
+.win-box-c .win-count { color: #1e8f54; }
+.win-box-d .win-count { color: #6340a8; }
+.win-label { font-size: 10.5px; color: #5a7a90; margin-top: 2px; font-weight: 500; }
+
+/* ─── OBSERVATIONS ───────────────────────────────────── */
+.obs-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.obs-card {
+  background: #ffffff;
+  border: 1.5px solid #dde3ea;
+  border-radius: 10px;
+  padding: 18px 20px;
+}
+.obs-strat-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 12px;
+  display: inline-block;
+  margin-bottom: 12px;
+}
+.obs-a { background: #deeaff; color: #1a4fa0; }
+.obs-b { background: #ffe8d4; color: #a04010; }
+.obs-c { background: #d4f5e4; color: #106038; }
+.obs-d { background: #ebe0ff; color: #4a2090; }
+
+.obs-list { list-style: none; }
+.obs-list li {
+  font-size: 12px;
+  color: #3a4a5a;
+  padding: 5px 0;
+  padding-left: 18px;
+  position: relative;
+  line-height: 1.5;
+  border-bottom: 1px solid #f0f2f5;
+}
+.obs-list li:last-child { border-bottom: none; }
+.obs-list li::before { position: absolute; left: 0; }
+.obs-list .ok::before   { content: '✓'; color: #1e8f54; font-weight: 700; }
+.obs-list .warn::before { content: '!'; color: #d97a3a; font-weight: 700; }
+.obs-list .bad::before  { content: '✗'; color: #c03030; font-weight: 700; }
+.obs-list .info::before { content: '→'; color: #5a7a90; }
+
+.obs-summary {
+  margin-top: 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #f4f6f9;
+  color: #3a4a5a;
+}
+
+/* ─── STRATEGY E HIGHLIGHT ───────────────────────────── */
+.strat-e-box {
+  background: #fffbec;
+  border: 1.5px solid #d4a820;
+  border-radius: 10px;
+  padding: 18px 22px;
+  margin-bottom: 20px;
+}
+.strat-e-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #8a5c00;
+  margin-bottom: 10px;
+  letter-spacing: 0.5px;
+}
+.e-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+.e-col-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #7a5000;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #e8c840;
+}
+.e-item {
+  font-size: 11.5px;
+  color: #5a4000;
+  padding: 3px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.e-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.e-dot-color { background: #3b7dd8; }
+.e-dot-seg   { background: #d97a3a; }
+.e-dot-mix   { background: #3aab6a; }
+
+/* ─── FOOTER ──────────────────────────────────────────── */
+.footer {
+  background: #2a3a4e;
+  border-radius: 8px;
+  padding: 12px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.footer-left  { font-size: 11px; color: #6a8099; font-family: 'JetBrains Mono'; }
+.footer-right { font-size: 11px; color: #4a6a80; font-family: 'JetBrains Mono'; text-align: right; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- ─── HEADER ─────────────────────────────────────────── -->
+<div class="header">
+  <div>
+    <div class="header-title">Tomato Disease Classification — Research Architecture</div>
+    <div class="header-sub">MobileNetV2 Transfer Learning · 4-Strategy Comparative Study · PlantVillage Dataset</div>
+  </div>
+  <div class="header-meta">
+    Jatin Bhanot · 2211981181<br>
+    BE CSE · Chitkara University HP<br>
+    CS183 Lab Oriented Project
+  </div>
+</div>
+
+<!-- ─── STRATEGY RESULTS ───────────────────────────────── -->
+<div class="section-label">Experimental Results — All 4 Strategies</div>
+<div class="strategy-grid">
+
+  <div class="strat-card strat-a">
+    <div class="strat-label">Strategy A</div>
+    <div class="strat-name">Color Only</div>
+    <div class="strat-acc">89.06%</div>
+    <div class="strat-acc-sub">Test accuracy</div>
+    <div class="strat-row"><span>Val accuracy</span><span>88.85%</span></div>
+    <div class="strat-row"><span>Test loss</span><span>0.3366</span></div>
+    <div class="strat-row"><span>Training data</span><span>9,325 imgs</span></div>
+    <div class="strat-row"><span>Epochs</span><span>20</span></div>
+    <div class="strat-row"><span>Learning rate</span><span>0.001</span></div>
+    <div class="strat-row"><span>Base model</span><span>ImageNet fresh</span></div>
+    <span class="badge badge-gold">🥇 Overall Best</span>
+  </div>
+
+  <div class="strat-card strat-b">
+    <div class="strat-label">Strategy B</div>
+    <div class="strat-name">Segmented Only</div>
+    <div class="strat-acc">86.13%</div>
+    <div class="strat-acc-sub">Test accuracy</div>
+    <div class="strat-row"><span>Val accuracy</span><span>86.42%</span></div>
+    <div class="strat-row"><span>Test loss</span><span>0.4064</span></div>
+    <div class="strat-row"><span>Training data</span><span>9,325 imgs</span></div>
+    <div class="strat-row"><span>Epochs</span><span>20</span></div>
+    <div class="strat-row"><span>Learning rate</span><span>0.001</span></div>
+    <div class="strat-row"><span>Base model</span><span>ImageNet fresh</span></div>
+    <span class="badge badge-bronze">🥉 3rd Overall</span>
+  </div>
+
+  <div class="strat-card strat-c">
+    <div class="strat-label">Strategy C</div>
+    <div class="strat-name">Mixed 50/50</div>
+    <div class="strat-acc">87.48%</div>
+    <div class="strat-acc-sub">Test accuracy</div>
+    <div class="strat-row"><span>Val accuracy</span><span>87.14%</span></div>
+    <div class="strat-row"><span>Test loss</span><span>0.3631</span></div>
+    <div class="strat-row"><span>Training data</span><span>9,746 imgs</span></div>
+    <div class="strat-row"><span>Epochs</span><span>20</span></div>
+    <div class="strat-row"><span>Learning rate</span><span>0.001</span></div>
+    <div class="strat-row"><span>Base model</span><span>ImageNet fresh</span></div>
+    <span class="badge badge-silver">4th Overall</span>
+  </div>
+
+  <div class="strat-card strat-d">
+    <div class="strat-label">Strategy D</div>
+    <div class="strat-name">Fine-Tuned (A→Seg)</div>
+    <div class="strat-acc">88.42%</div>
+    <div class="strat-acc-sub">Test accuracy</div>
+    <div class="strat-row"><span>Val accuracy</span><span>87.28%</span></div>
+    <div class="strat-row"><span>Test loss</span><span>0.3688</span></div>
+    <div class="strat-row"><span>Training data</span><span>9,325 imgs</span></div>
+    <div class="strat-row"><span>Epochs</span><span>10 (fine-tune)</span></div>
+    <div class="strat-row"><span>Learning rate</span><span>1e-5</span></div>
+    <div class="strat-row"><span>Base model</span><span>Strategy A (89%)</span></div>
+    <span class="badge badge-purple">🥈 2nd Overall</span>
+  </div>
+
+</div>
+
+<!-- ─── PIPELINE ───────────────────────────────────────── -->
+<div class="section-label">System Pipeline</div>
+<div class="pipeline-wrap">
+  <div class="pipeline">
+    <div class="pipe-block">
+      <div class="pb-icon">🗂️</div>
+      <div class="pb-title">PlantVillage</div>
+      <div class="pb-sub">10 classes · 18,160 imgs<br>color / segmented</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-block accent-a">
+      <div class="pb-icon">⚙️</div>
+      <div class="pb-title">Preprocessing</div>
+      <div class="pb-sub">224×224 · balance 1000/cls<br>70 / 15 / 15 split</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-block accent-a">
+      <div class="pb-icon">📦</div>
+      <div class="pb-title">MobileNetV2</div>
+      <div class="pb-sub">ImageNet pretrained<br>154 frozen layers</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-block accent-b">
+      <div class="pb-icon">🧩</div>
+      <div class="pb-title">Custom Head</div>
+      <div class="pb-sub">GAP → Dense(128)<br>Dropout(0.3) → Softmax</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-block accent-c">
+      <div class="pb-icon">🏋️</div>
+      <div class="pb-title">Train A / B / C</div>
+      <div class="pb-sub">Adam lr=0.001<br>20 epochs · callbacks</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-block accent-d">
+      <div class="pb-icon">🔧</div>
+      <div class="pb-title">Fine-Tune D</div>
+      <div class="pb-sub">Load A · lr=1e-5<br>10 epochs · 30 unfrozen</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-block accent-out">
+      <div class="pb-icon">📊</div>
+      <div class="pb-title">Evaluate</div>
+      <div class="pb-sub">Accuracy · F1 · CM<br>Per-class analysis</div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── PER-CLASS TABLE ────────────────────────────────── -->
+<div class="section-label">Per-Class Accuracy Comparison — All 4 Strategies</div>
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th style="text-align:left; width:160px;">Disease Class</th>
+        <th style="color:#93b8e8;">A — Color</th>
+        <th style="color:#e8b88a;">B — Segmented</th>
+        <th style="color:#7acf9e;">C — Mixed</th>
+        <th style="color:#b89adf;">D — Fine-tuned</th>
+        <th style="color:#aac0d0;">D vs A</th>
+        <th style="color:#aac0d0;">D vs B</th>
+        <th style="color:#aac0d0;">D vs C</th>
+        <th>Best</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Bacterial spot: A=99.3, B=78.7, C=90.0, D=88.7 → best=A -->
+      <tr>
+        <td>Bacterial spot</td>
+        <td class="cell-best-a">99.3%</td>
+        <td class="cell-b">78.7%</td>
+        <td class="cell-c">90.0%</td>
+        <td class="cell-d">88.7%</td>
+        <td class="diff-neg">−10.6%</td>
+        <td class="diff-pos">+10.0%</td>
+        <td class="diff-neg">−1.3%</td>
+        <td><span class="winner-pill wp-a">A</span></td>
+      </tr>
+      <!-- Early blight: A=82.0, B=74.7, C=62.0, D=74.7 → best=A -->
+      <tr>
+        <td>Early blight</td>
+        <td class="cell-best-a">82.0%</td>
+        <td class="cell-b">74.7%</td>
+        <td class="cell-c cell-danger">62.0%</td>
+        <td class="cell-d">74.7%</td>
+        <td class="diff-neg">−7.3%</td>
+        <td style="color:#888;">±0.0%</td>
+        <td class="diff-pos">+12.7%</td>
+        <td><span class="winner-pill wp-a">A</span></td>
+      </tr>
+      <!-- Late blight: A=89.3, B=92.0, C=94.7, D=91.3 → best=C -->
+      <tr>
+        <td>Late blight</td>
+        <td class="cell-a">89.3%</td>
+        <td class="cell-b">92.0%</td>
+        <td class="cell-best-c">94.7%</td>
+        <td class="cell-d">91.3%</td>
+        <td class="diff-pos">+2.0%</td>
+        <td class="diff-neg">−0.7%</td>
+        <td class="diff-neg">−3.4%</td>
+        <td><span class="winner-pill wp-c">C</span></td>
+      </tr>
+      <!-- Leaf Mold: A=92.3, B=79.0, C=92.0, D=92.3 → best=D (tied with A) -->
+      <tr>
+        <td>Leaf Mold</td>
+        <td class="cell-a">92.3%</td>
+        <td class="cell-b">79.0%</td>
+        <td class="cell-c">92.0%</td>
+        <td class="cell-best-d">92.3%</td>
+        <td style="color:#888;">±0.0%</td>
+        <td class="diff-pos">+13.3%</td>
+        <td class="diff-pos">+0.3%</td>
+        <td><span class="winner-pill wp-d">D</span></td>
+      </tr>
+      <!-- Septoria: A=85.3, B=90.7, C=89.3, D=89.3 → best=B -->
+      <tr>
+        <td>Septoria leaf spot</td>
+        <td class="cell-a">85.3%</td>
+        <td class="cell-best-b">90.7%</td>
+        <td class="cell-c">89.3%</td>
+        <td class="cell-d">89.3%</td>
+        <td class="diff-pos">+4.0%</td>
+        <td class="diff-neg">−1.4%</td>
+        <td style="color:#888;">±0.0%</td>
+        <td><span class="winner-pill wp-b">B</span></td>
+      </tr>
+      <!-- Spider mites: A=77.3, B=89.3, C=88.7, D=85.3 → best=B -->
+      <tr>
+        <td>Spider mites</td>
+        <td class="cell-a cell-warn">77.3%</td>
+        <td class="cell-best-b">89.3%</td>
+        <td class="cell-c">88.7%</td>
+        <td class="cell-d">85.3%</td>
+        <td class="diff-pos">+8.0%</td>
+        <td class="diff-neg">−4.0%</td>
+        <td class="diff-neg">−3.4%</td>
+        <td><span class="winner-pill wp-b">B</span></td>
+      </tr>
+      <!-- Target Spot: A=86.0, B=85.3, C=87.3, D=76.7 → best=C -->
+      <tr>
+        <td>Target Spot</td>
+        <td class="cell-a">86.0%</td>
+        <td class="cell-b">85.3%</td>
+        <td class="cell-best-c">87.3%</td>
+        <td class="cell-d cell-danger">76.7%</td>
+        <td class="diff-neg">−9.3%</td>
+        <td class="diff-neg">−8.6%</td>
+        <td class="diff-neg">−10.6%</td>
+        <td><span class="winner-pill wp-c">C</span></td>
+      </tr>
+      <!-- Yellow Curl: A=95.3, B=96.7, C=90.7, D=96.0 → best=B -->
+      <tr>
+        <td>Yellow Leaf Curl</td>
+        <td class="cell-a">95.3%</td>
+        <td class="cell-best-b">96.7%</td>
+        <td class="cell-c">90.7%</td>
+        <td class="cell-d">96.0%</td>
+        <td class="diff-pos">+0.7%</td>
+        <td class="diff-neg">−0.7%</td>
+        <td class="diff-pos">+5.3%</td>
+        <td><span class="winner-pill wp-b">B</span></td>
+      </tr>
+      <!-- Mosaic virus: A=91.1, B=82.1, C=93.8, D=96.4 → best=D -->
+      <tr>
+        <td>Mosaic virus</td>
+        <td class="cell-a">91.1%</td>
+        <td class="cell-b">82.1%</td>
+        <td class="cell-c">93.8%</td>
+        <td class="cell-best-d">96.4%</td>
+        <td class="diff-pos">+5.3%</td>
+        <td class="diff-pos">+14.3%</td>
+        <td class="diff-pos">+2.6%</td>
+        <td><span class="winner-pill wp-d">D</span></td>
+      </tr>
+      <!-- Healthy: A=94.0, B=90.0, C=88.0, D=98.7 → best=D -->
+      <tr>
+        <td>Healthy</td>
+        <td class="cell-a">94.0%</td>
+        <td class="cell-b">90.0%</td>
+        <td class="cell-c">88.0%</td>
+        <td class="cell-best-d">98.7%</td>
+        <td class="diff-pos">+4.7%</td>
+        <td class="diff-pos">+8.7%</td>
+        <td class="diff-pos">+10.7%</td>
+        <td><span class="winner-pill wp-d">D</span></td>
+      </tr>
+    </tbody>
+    <tfoot>
+      <tr>
+        <td>OVERALL</td>
+        <td>89.06%</td>
+        <td>86.13%</td>
+        <td>87.48%</td>
+        <td>88.42%</td>
+        <td>−0.64%</td>
+        <td>+2.29%</td>
+        <td>+0.94%</td>
+        <td></td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <!-- Win count strip -->
+  <div class="win-strip">
+    <div class="win-box win-box-a">
+      <div class="win-count">2</div>
+      <div class="win-label">Strategy A — Color<br>Bacterial spot, Early blight</div>
+    </div>
+    <div class="win-box win-box-b">
+      <div class="win-count">3</div>
+      <div class="win-label">Strategy B — Segmented<br>Septoria, Spider mites, Yellow Curl</div>
+    </div>
+    <div class="win-box win-box-c">
+      <div class="win-count">2</div>
+      <div class="win-label">Strategy C — Mixed<br>Late blight, Target Spot</div>
+    </div>
+    <div class="win-box win-box-d">
+      <div class="win-count">3</div>
+      <div class="win-label">Strategy D — Fine-tuned<br>Leaf Mold, Mosaic virus, Healthy</div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── KEY RESEARCH OBSERVATIONS ─────────────────────── -->
+<div class="section-label">Key Research Observations — All 4 Strategies</div>
+<div class="obs-grid">
+
+  <!-- Strategy A -->
+  <div class="obs-card">
+    <span class="obs-strat-label obs-a">Strategy A — Color only · 89.06%</span>
+    <ul class="obs-list">
+      <li class="ok">Highest overall accuracy — color context is the strongest signal overall</li>
+      <li class="ok">Bacterial spot near-perfect at 99.3% — relies on color contrast of water-soaked lesions against green leaf</li>
+      <li class="ok">Healthy leaf detection at 94% — vibrant green color is a strong healthy indicator</li>
+      <li class="warn">Spider mites weakest at 77.3% — tiny mite damage patterns are obscured by background color noise</li>
+      <li class="info">Color-dominant diseases (Bacterial spot, Leaf Mold, Early blight) consistently prefer this strategy across all experiments</li>
+    </ul>
+    <div class="obs-summary">Finding: MobileNetV2 pretrained on color ImageNet leverages color-contrast signals naturally — background context carries disease information, not just noise</div>
+  </div>
+
+  <!-- Strategy B -->
+  <div class="obs-card">
+    <span class="obs-strat-label obs-b">Strategy B — Segmented only · 86.13%</span>
+    <ul class="obs-list">
+      <li class="ok">Spider mites jumped from 77.3% → 89.3% (+12%) — texture patterns clearer without background distractions</li>
+      <li class="ok">Septoria improved 85.3% → 90.7% (+5.4%) — spot shape and pattern more visible on clean leaf</li>
+      <li class="ok">Yellow Leaf Curl highest at 96.7% — curl shape is a pure structural feature, unaffected by background removal</li>
+      <li class="bad">Bacterial spot collapsed from 99.3% → 78.7% (−20.6%) — color-contrast disease loses its primary signal</li>
+      <li class="bad">Leaf Mold dropped 92.3% → 79.0% (−13.3%) — yellow-green color difference was the key discriminator</li>
+      <li class="info">Texture/shape-dominant diseases benefit from segmentation; color-contrast diseases are hurt</li>
+    </ul>
+    <div class="obs-summary">Finding: Background removal is a double-edged sword — it helps pattern-based diseases but destroys color-based disease signals</div>
+  </div>
+
+  <!-- Strategy C -->
+  <div class="obs-card">
+    <span class="obs-strat-label obs-c">Strategy C — Mixed 50/50 · 87.48%</span>
+    <ul class="obs-list">
+      <li class="ok">Late blight best result at 94.7% — consistently improves across all strategies (A→B→C trend)</li>
+      <li class="ok">Mosaic virus improved to 93.8% — combining both modalities recovers from the segmented drop</li>
+      <li class="ok">Target Spot best at 87.3% across A, B, C — responds well to visual variety in training</li>
+      <li class="bad">Early blight collapsed from 82.0% → 62.0% (−20%) — most critical failure, conflicting visual representations confused the model</li>
+      <li class="warn">Overall accuracy (87.48%) between A and B — random mixing does not achieve the best of both worlds</li>
+      <li class="info">Random 50/50 mixing directly motivates Strategy E — per-class assignment needed, not uniform mixing</li>
+    </ul>
+    <div class="obs-summary">Finding: Early blight's 20% collapse under random mixing is the strongest evidence that class-aware selective mixing (Strategy E) is necessary</div>
+  </div>
+
+  <!-- Strategy D -->
+  <div class="obs-card">
+    <span class="obs-strat-label obs-d">Strategy D — Fine-tuned · 88.42%</span>
+    <ul class="obs-list">
+      <li class="ok">Healthy leaf reached 98.7% — highest single-class result across all 4 strategies</li>
+      <li class="ok">Mosaic virus reached 96.4% — best result for this class, D uniquely excels here</li>
+      <li class="ok">Catastrophic forgetting: only −0.64% vs Strategy A — 99.3% of original knowledge retained</li>
+      <li class="ok">Epoch 1 started at 82.2% validation accuracy — proves color knowledge carried over from A</li>
+      <li class="warn">Target Spot dropped to 76.7% — worst result for this class across all strategies</li>
+      <li class="bad">Bacterial spot dropped from 99.3% → 88.7% (−10.6%) — some color-contrast forgetting occurred</li>
+      <li class="info">Fine-tuning is successful for sequential domain adaptation — overall performance competitive at 88.42%</li>
+    </ul>
+    <div class="obs-summary">Finding: Fine-tuning at lr=1e-5 successfully adapts to segmented domain with minimal forgetting, but per-class trade-offs remain — validating the need for Strategy E</div>
+  </div>
+
+</div>
+
+<!-- ─── STRATEGY E PREVIEW ─────────────────────────────── -->
+<div class="section-label">Strategy E — Class-Aware Selective Mixing (Pending)</div>
+<div class="strat-e-box">
+  <div class="strat-e-title">★  Original Research Contribution — Data-Driven Per-Class Modality Assignment</div>
+  <div class="e-grid">
+    <div>
+      <div class="e-col-title">Color-dominant classes → Color images (1000/class)</div>
+      <div class="e-item"><span class="e-dot e-dot-color"></span>Bacterial spot — A wins by +20.6% over B</div>
+      <div class="e-item"><span class="e-dot e-dot-color"></span>Early blight — A wins; C collapsed to 62%</div>
+      <div class="e-item"><span class="e-dot e-dot-color"></span>Leaf Mold — A wins by +13.3% over B</div>
+      <div class="e-item"><span class="e-dot e-dot-color"></span>Healthy — A=94%, D=98.7% — color dominant</div>
+    </div>
+    <div>
+      <div class="e-col-title">Texture-dominant classes → Segmented images (1000/class)</div>
+      <div class="e-item"><span class="e-dot e-dot-seg"></span>Spider mites — B wins by +12.0% over A</div>
+      <div class="e-item"><span class="e-dot e-dot-seg"></span>Septoria — B wins by +5.4% over A</div>
+      <div class="e-item"><span class="e-dot e-dot-seg"></span>Yellow Leaf Curl — B=96.7% consistently best</div>
+      <div class="e-item"><span class="e-dot e-dot-mix"></span>Late blight — Mixed C=94.7% best; both modalities help</div>
+      <div class="e-item"><span class="e-dot e-dot-mix"></span>Target Spot — Mixed C=87.3% best result</div>
+      <div class="e-item"><span class="e-dot e-dot-mix"></span>Mosaic virus — D=96.4% (mixed modality exposure)</div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── FOOTER ──────────────────────────────────────────── -->
+<div class="footer">
+  <div class="footer-left">TensorFlow 2.10 · Python 3.11 · MobileNetV2 · PlantVillage · VSCode</div>
+  <div class="footer-right">D:\Development\8th Sem Project\TomatoClassification · 2024–25</div>
+</div>
+
+</div>
+</body>
+</html>

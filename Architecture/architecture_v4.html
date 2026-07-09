@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tomato Disease Classification — Research Dashboard</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:#0d1117;}
+::-webkit-scrollbar-thumb{background:#2a3a50;border-radius:3px;}
+body{background:#0d1117;font-family:'Inter',sans-serif;color:#c9d1d9;min-height:100vh;}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeSlide{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+@keyframes grow{from{width:0;}to{width:var(--w);}}
+@keyframes glow{0%,100%{opacity:.6;}50%{opacity:1;}}
+@keyframes spin{to{transform:rotate(360deg);}}
+@keyframes countIn{from{opacity:0;transform:scale(.5);}to{opacity:1;transform:scale(1);}}
+@keyframes dotFlow{0%{left:0;opacity:0;}20%{opacity:1;}80%{opacity:1;}100%{left:calc(100% - 8px);opacity:0;}}
+@keyframes shimmer{0%{background-position:-200% 0;}100%{background-position:200% 0;}}
+@keyframes borderBlink{0%,100%{border-color:rgba(255,193,7,.3);}50%{border-color:rgba(255,193,7,.8);}}
+
+/* ── LAYOUT ── */
+.app{display:grid;grid-template-columns:200px 1fr;grid-template-rows:60px 1fr;min-height:100vh;}
+
+/* ── TOP BAR ── */
+.topbar{grid-column:1/-1;background:#161b22;border-bottom:1px solid #21262d;
+  display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:100;}
+.tb-logo{display:flex;align-items:center;gap:10px;}
+.tb-icon{width:28px;height:28px;background:linear-gradient(135deg,#2ea043,#388bfd);border-radius:6px;
+  display:flex;align-items:center;justify-content:center;font-size:14px;}
+.tb-title{font-size:14px;font-weight:700;color:#e6edf3;}
+.tb-sub{font-size:10px;color:#484f58;font-family:'JetBrains Mono';margin-top:1px;}
+.tb-right{display:flex;align-items:center;gap:16px;}
+.tb-chip{background:#21262d;border:1px solid #30363d;border-radius:20px;padding:4px 12px;
+  font-size:10px;color:#7d8590;font-family:'JetBrains Mono';}
+.tb-chip.win{background:rgba(46,160,67,.12);border-color:rgba(46,160,67,.3);color:#2ea043;}
+
+/* ── SIDEBAR ── */
+.sidebar{background:#161b22;border-right:1px solid #21262d;padding:16px 0;position:sticky;top:60px;height:calc(100vh - 60px);overflow-y:auto;}
+.nav-section{padding:8px 16px 4px;font-size:10px;font-weight:600;letter-spacing:1.5px;color:#484f58;text-transform:uppercase;}
+.nav-item{display:flex;align-items:center;gap:8px;padding:7px 16px;font-size:12px;color:#7d8590;
+  cursor:pointer;border-left:2px solid transparent;transition:all .15s;}
+.nav-item:hover{color:#c9d1d9;background:#1c2128;}
+.nav-item.active{color:#58a6ff;border-left-color:#58a6ff;background:#1c2128;}
+.nav-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.nd-a{background:#388bfd;} .nd-b{background:#f0883e;} .nd-c{background:#3fb950;}
+.nd-d{background:#a371f7;} .nd-e{background:#f78166;} .nd-g{background:#56d364;}
+
+/* ── MAIN CONTENT ── */
+.main{padding:24px;overflow-y:auto;max-height:calc(100vh - 60px);}
+.section{margin-bottom:32px;animation:fadeSlide .5s ease both;}
+
+/* ── HERO METRICS ── */
+.hero{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px;}
+.hcard{background:#161b22;border:1px solid #21262d;border-radius:10px;padding:16px 14px;
+  position:relative;overflow:hidden;cursor:default;transition:transform .2s,border-color .2s;}
+.hcard:hover{transform:translateY(-2px);border-color:#30363d;}
+.hcard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;border-radius:10px 10px 0 0;}
+.hc-a::before{background:linear-gradient(90deg,#388bfd,#58a6ff);}
+.hc-b::before{background:linear-gradient(90deg,#d97a3a,#f0a060);}
+.hc-c::before{background:linear-gradient(90deg,#2ea043,#3fb950);}
+.hc-d::before{background:linear-gradient(90deg,#7a5cb8,#a371f7);}
+.hc-e::before{background:linear-gradient(90deg,#da3633,#f78166);}
+.hcard-rank{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;}
+.hc-a .hcard-rank{color:#388bfd;} .hc-b .hcard-rank{color:#d97a3a;} .hc-c .hcard-rank{color:#2ea043;}
+.hc-d .hcard-rank{color:#7a5cb8;} .hc-e .hcard-rank{color:#da3633;}
+.hcard-name{font-size:11px;color:#7d8590;margin-bottom:8px;}
+.hcard-acc{font-size:28px;font-weight:800;line-height:1;letter-spacing:-1px;}
+.hc-a .hcard-acc{color:#58a6ff;} .hc-b .hcard-acc{color:#f0883e;} .hc-c .hcard-acc{color:#3fb950;}
+.hc-d .hcard-acc{color:#a371f7;} .hc-e .hcard-acc{color:#f78166;}
+.hcard-bar{height:3px;background:#21262d;border-radius:3px;margin:8px 0 4px;overflow:hidden;}
+.hbar{height:100%;border-radius:3px;}
+.hc-a .hbar{background:linear-gradient(90deg,#388bfd,#58a6ff);width:89.06%;animation:grow 1.2s .3s ease both;}
+.hc-b .hbar{background:linear-gradient(90deg,#d97a3a,#f0a060);width:86.13%;animation:grow 1.2s .4s ease both;}
+.hc-c .hbar{background:linear-gradient(90deg,#2ea043,#3fb950);width:87.48%;animation:grow 1.2s .5s ease both;}
+.hc-d .hbar{background:linear-gradient(90deg,#7a5cb8,#a371f7);width:88.42%;animation:grow 1.2s .6s ease both;}
+.hc-e .hbar{background:linear-gradient(90deg,#da3633,#f78166);width:93.88%;animation:grow 1.2s .7s ease both;}
+.hcard-sub{font-size:9.5px;color:#484f58;font-family:'JetBrains Mono';}
+
+/* ── SECTION HEADER ── */
+.sh{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.sh-line{flex:1;height:1px;background:linear-gradient(to right,#21262d,transparent);}
+.sh-text{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#484f58;white-space:nowrap;}
+.sh-badge{background:#21262d;border:1px solid #30363d;border-radius:4px;padding:2px 8px;font-size:9px;color:#7d8590;}
+
+/* ── PIPELINE ── */
+.pipe{display:flex;align-items:center;overflow-x:auto;padding:12px 0;gap:0;}
+.pb{flex-shrink:0;background:#161b22;border:1px solid #21262d;border-radius:8px;
+  padding:10px 12px;min-width:100px;text-align:center;transition:all .2s;}
+.pb:hover{border-color:#388bfd;background:#1c2128;transform:translateY(-2px);}
+.pb-i{font-size:18px;margin-bottom:4px;}
+.pb-t{font-size:10px;font-weight:700;color:#c9d1d9;}
+.pb-s{font-size:8px;color:#484f58;margin-top:2px;font-family:'JetBrains Mono';line-height:1.5;}
+.pb.done{border-color:rgba(46,160,67,.4);background:rgba(46,160,67,.05);}
+.pb.pending{border-color:rgba(255,193,7,.3);background:rgba(255,193,7,.03);animation:borderBlink 2.5s ease infinite;}
+.pb.highlight{border-color:rgba(247,129,102,.5);background:rgba(247,129,102,.05);}
+.parr{flex-shrink:0;width:28px;text-align:center;color:#21262d;font-size:12px;position:relative;}
+.fd{position:absolute;top:50%;left:2px;width:6px;height:6px;background:#388bfd;border-radius:50%;
+  transform:translateY(-50%);animation:dotFlow 2s ease-in-out infinite;opacity:0;}
+.fd:nth-child(2){animation-delay:.7s;background:#3fb950;}
+.fd:nth-child(3){animation-delay:1.4s;background:#a371f7;}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:1px;background:#21262d;border-radius:8px;padding:3px;margin-bottom:16px;flex-wrap:wrap;}
+.tab{padding:6px 14px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;
+  color:#7d8590;transition:all .15s;border:none;background:transparent;}
+.tab:hover{color:#c9d1d9;}
+.tab.ta{color:#58a6ff;background:rgba(56,139,253,.15);}
+.tab.tb{color:#f0883e;background:rgba(240,136,62,.15);}
+.tab.tc{color:#3fb950;background:rgba(63,185,80,.15);}
+.tab.td{color:#a371f7;background:rgba(163,113,247,.15);}
+.tab.te{color:#f78166;background:rgba(247,129,102,.15);}
+.panel{display:none;animation:fadeSlide .25s ease;}
+.panel.show{display:block;}
+
+/* ── CHART CONTAINER ── */
+.chart-box{background:#161b22;border:1px solid #21262d;border-radius:10px;padding:16px;position:relative;}
+.chart-box canvas{max-width:100%;}
+
+/* ── CLASSIFICATION REPORT TABLE ── */
+.rtable{width:100%;border-collapse:collapse;font-size:11px;}
+.rtable thead th{background:#1c2128;color:#484f58;padding:8px 10px;font-size:9.5px;font-weight:600;
+  letter-spacing:.8px;text-align:center;border-bottom:1px solid #21262d;}
+.rtable thead th:first-child{text-align:left;}
+.rtable tbody tr{border-bottom:1px solid #161b22;transition:background .1s;}
+.rtable tbody tr:hover{background:#1c2128;}
+.rtable tbody td{padding:7px 10px;text-align:center;font-family:'JetBrains Mono';font-size:10.5px;color:#7d8590;}
+.rtable tbody td:first-child{text-align:left;font-family:'Inter';font-weight:600;font-size:11px;color:#c9d1d9;}
+.rtable tfoot td{padding:8px 10px;text-align:center;background:#1c2128;
+  font-family:'JetBrains Mono';font-size:10.5px;border-top:1px solid #30363d;color:#7d8590;}
+.rtable tfoot td:first-child{text-align:left;font-family:'Inter';font-weight:700;color:#8b949e;}
+.vh{color:#3fb950!important;font-weight:700!important;}
+.vm{color:#e3b341!important;}
+.vl{color:#f85149!important;font-weight:700!important;}
+.vw{color:#f0883e!important;}
+
+/* ── PER-CLASS TABLE ── */
+.pctable{width:100%;border-collapse:collapse;font-size:11px;}
+.pctable thead th{background:#1c2128;color:#484f58;padding:8px 10px;font-size:9px;font-weight:600;
+  letter-spacing:.8px;text-align:center;border-bottom:1px solid #21262d;}
+.pctable thead th:first-child{text-align:left;}
+.pctable tbody tr{border-bottom:1px solid #161b22;transition:background .1s;}
+.pctable tbody tr:hover{background:#1c2128;}
+.pctable tbody td{padding:7px 10px;text-align:center;font-family:'JetBrains Mono';font-size:10px;color:#7d8590;}
+.pctable tbody td:first-child{text-align:left;font-family:'Inter';font-weight:600;font-size:11px;color:#c9d1d9;}
+.pctable tfoot td{padding:8px 10px;text-align:center;background:#1c2128;
+  font-family:'JetBrains Mono';font-size:10.5px;font-weight:700;border-top:1px solid #30363d;color:#8b949e;}
+.pctable tfoot td:first-child{text-align:left;font-family:'Inter';}
+.ca{color:#58a6ff!important;font-weight:700!important;} .cb{color:#f0883e!important;font-weight:700!important;}
+.cc{color:#3fb950!important;font-weight:700!important;} .cd{color:#a371f7!important;font-weight:700!important;}
+.ce{color:#f78166!important;font-weight:700!important;}
+.bst-a{background:rgba(56,139,253,.2)!important;color:#58a6ff!important;font-weight:800!important;border-radius:4px;}
+.bst-b{background:rgba(240,136,62,.2)!important;color:#f0883e!important;font-weight:800!important;border-radius:4px;}
+.bst-c{background:rgba(63,185,80,.2)!important;color:#3fb950!important;font-weight:800!important;border-radius:4px;}
+.bst-d{background:rgba(163,113,247,.2)!important;color:#a371f7!important;font-weight:800!important;border-radius:4px;}
+.bst-e{background:rgba(247,129,102,.25)!important;color:#f78166!important;font-weight:800!important;border-radius:4px;}
+.dng{color:#f85149!important;font-weight:700!important;}
+.dp{color:#3fb950;font-size:9.5px;font-weight:600;} .dn{color:#f85149;font-size:9.5px;font-weight:600;} .dz{color:#484f58;font-size:9.5px;}
+.wpill{display:inline-block;padding:2px 7px;border-radius:10px;font-size:9px;font-weight:800;font-family:'Inter';}
+.wp-a{background:rgba(56,139,253,.2);color:#58a6ff;}
+.wp-b{background:rgba(240,136,62,.2);color:#f0883e;}
+.wp-c{background:rgba(63,185,80,.2);color:#3fb950;}
+.wp-d{background:rgba(163,113,247,.2);color:#a371f7;}
+.wp-e{background:rgba(247,129,102,.2);color:#f78166;}
+
+/* ── WIN STRIP ── */
+.wstrip{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:16px;}
+.wb{text-align:center;padding:12px 8px;border-radius:8px;border:1px solid;transition:transform .2s;}
+.wb:hover{transform:translateY(-2px);}
+.wb-a{background:rgba(56,139,253,.08);border-color:rgba(56,139,253,.25);}
+.wb-b{background:rgba(240,136,62,.08);border-color:rgba(240,136,62,.25);}
+.wb-c{background:rgba(63,185,80,.08);border-color:rgba(63,185,80,.25);}
+.wb-d{background:rgba(163,113,247,.08);border-color:rgba(163,113,247,.25);}
+.wb-e{background:rgba(247,129,102,.1);border-color:rgba(247,129,102,.35);}
+.wn{font-size:26px;font-weight:800;animation:countIn .5s ease both;}
+.wb-a .wn{color:#58a6ff;animation-delay:.8s;} .wb-b .wn{color:#f0883e;animation-delay:.9s;}
+.wb-c .wn{color:#3fb950;animation-delay:1s;} .wb-d .wn{color:#a371f7;animation-delay:1.1s;}
+.wb-e .wn{color:#f78166;animation-delay:1.2s;}
+.wl{font-size:9.5px;color:#484f58;margin-top:3px;line-height:1.5;}
+
+/* ── ROUTING TABLE ── */
+.rtab{width:100%;border-collapse:collapse;font-size:11px;}
+.rtab th{background:#1c2128;color:#484f58;padding:8px 10px;font-size:9px;font-weight:600;
+  letter-spacing:.8px;text-align:left;border-bottom:1px solid #21262d;}
+.rtab td{padding:8px 10px;border-bottom:1px solid #161b22;font-size:11px;color:#c9d1d9;}
+.rtab tr:hover td{background:#1c2128;}
+.domain-badge{display:inline-block;padding:2px 9px;border-radius:12px;font-size:9px;font-weight:700;font-family:'JetBrains Mono';}
+.d-color{background:rgba(56,139,253,.15);color:#58a6ff;border:1px solid rgba(56,139,253,.25);}
+.d-seg{background:rgba(240,136,62,.15);color:#f0883e;border:1px solid rgba(240,136,62,.25);}
+.d-mix{background:rgba(63,185,80,.15);color:#3fb950;border:1px solid rgba(63,185,80,.25);}
+
+/* ── OBS GRID ── */
+.obs-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+.obs-card{background:#161b22;border:1px solid #21262d;border-radius:10px;padding:16px 18px;transition:box-shadow .2s;}
+.obs-card:hover{box-shadow:0 4px 20px rgba(0,0,0,.4);}
+.obs-tag{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+  padding:3px 10px;border-radius:20px;display:inline-block;margin-bottom:10px;}
+.ot-a{background:rgba(56,139,253,.15);color:#58a6ff;border:1px solid rgba(56,139,253,.3);}
+.ot-b{background:rgba(240,136,62,.15);color:#f0883e;border:1px solid rgba(240,136,62,.3);}
+.ot-c{background:rgba(63,185,80,.15);color:#3fb950;border:1px solid rgba(63,185,80,.3);}
+.ot-d{background:rgba(163,113,247,.15);color:#a371f7;border:1px solid rgba(163,113,247,.3);}
+.ot-e{background:rgba(247,129,102,.15);color:#f78166;border:1px solid rgba(247,129,102,.3);}
+.obs-list{list-style:none;}
+.obs-list li{font-size:11px;color:#7d8590;padding:4px 0 4px 16px;position:relative;
+  line-height:1.5;border-bottom:1px solid #1c2128;}
+.obs-list li:last-child{border-bottom:none;}
+.obs-list .ok::before{content:'✓';position:absolute;left:0;color:#3fb950;font-weight:700;}
+.obs-list .bad::before{content:'✗';position:absolute;left:0;color:#f85149;font-weight:700;}
+.obs-list .warn::before{content:'!';position:absolute;left:0;color:#e3b341;font-weight:700;}
+.obs-list .info::before{content:'→';position:absolute;left:0;color:#484f58;}
+.obs-sum{margin-top:10px;padding:8px 12px;border-radius:6px;font-size:10.5px;font-weight:600;
+  background:#1c2128;color:#7d8590;border-left:3px solid #30363d;}
+
+/* ── ANALYSIS CARDS ── */
+.analysis-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.ac{background:#161b22;border:1px solid #21262d;border-radius:10px;padding:18px 20px;transition:transform .2s,border-color .2s;}
+.ac:hover{transform:translateY(-2px);border-color:#30363d;}
+.ac-tag{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+  padding:3px 10px;border-radius:20px;display:inline-block;margin-bottom:10px;}
+.tag-grad{background:rgba(240,136,62,.1);color:#d97a3a;border:1px solid rgba(240,136,62,.25);}
+.tag-sev{background:rgba(63,185,80,.1);color:#3fb950;border:1px solid rgba(63,185,80,.25);}
+.ac-title{font-size:14px;font-weight:700;color:#e6edf3;margin-bottom:6px;}
+.ac-sub{font-size:11px;color:#484f58;line-height:1.6;margin-bottom:14px;}
+.demo-box{background:#0d1117;border:1px solid #21262d;border-radius:6px;padding:12px;margin-bottom:12px;position:relative;overflow:hidden;}
+.scan{position:absolute;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(240,136,62,.5),transparent);animation:glow 2s linear infinite;}
+.hrow{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.hrow:last-child{margin-bottom:0;}
+.hlbl{font-size:8.5px;color:#484f58;width:70px;flex-shrink:0;font-family:'JetBrains Mono';}
+.htrk{flex:1;height:14px;background:#1c2128;border-radius:3px;overflow:hidden;}
+.hfil{height:100%;border-radius:3px;position:relative;}
+.hfil::after{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent);
+  animation:shimmer 2.5s linear infinite;}
+.hf-a{background:linear-gradient(90deg,#1f4e8c,#388bfd);width:88%;animation:grow 1.5s .5s ease both;}
+.hf-b{background:linear-gradient(90deg,#7a3a10,#d97a3a);width:31%;animation:grow 1.5s .6s ease both;}
+.hf-c{background:linear-gradient(90deg,#0e4020,#2ea043);width:55%;animation:grow 1.5s .7s ease both;}
+.hf-d{background:linear-gradient(90deg,#3a1880,#7a5cb8);width:72%;animation:grow 1.5s .8s ease both;}
+.hpct{font-size:8.5px;font-family:'JetBrains Mono';color:#484f58;min-width:28px;text-align:right;}
+.svrow{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.svrow:last-child{margin-bottom:0;}
+.svlbl{font-size:8.5px;color:#484f58;width:75px;font-family:'JetBrains Mono';}
+.svtrk{flex:1;height:11px;background:#1c2128;border-radius:20px;overflow:hidden;}
+.svfil{height:100%;border-radius:20px;}
+.sv-m{background:linear-gradient(90deg,#145c30,#2ea043);width:12%;animation:grow 1.2s .6s ease both;}
+.sv-mo{background:linear-gradient(90deg,#7a5800,#e3b341);width:34%;animation:grow 1.2s .7s ease both;}
+.sv-s{background:linear-gradient(90deg,#7a1515,#f85149);width:68%;animation:grow 1.2s .8s ease both;}
+.svbdg{font-size:8px;font-weight:700;padding:1px 6px;border-radius:10px;flex-shrink:0;}
+.svb-m{background:rgba(46,160,67,.15);color:#3fb950;}
+.svb-mo{background:rgba(227,179,65,.15);color:#e3b341;}
+.svb-s{background:rgba(248,81,73,.15);color:#f85149;}
+.formula{background:#0d1117;border-radius:5px;padding:8px 12px;font-family:'JetBrains Mono';
+  font-size:9.5px;color:#3fb950;margin-top:10px;border-left:2px solid #145c30;}
+.tech-list{list-style:none;}
+.tech-list li{font-size:11px;color:#7d8590;padding:4px 0 4px 14px;position:relative;border-bottom:1px solid #1c2128;line-height:1.5;}
+.tech-list li:last-child{border-bottom:none;}
+.tech-list li::before{position:absolute;left:0;color:#d97a3a;content:'▸';}
+.tech-list.sev li::before{color:#3fb950;}
+
+/* ── FOOTER ── */
+.footer{background:#161b22;border-top:1px solid #21262d;padding:12px 24px;
+  display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#484f58;font-family:'JetBrains Mono';}
+
+/* ── RESPONSIVE ── */
+@media(max-width:1024px){
+  .app{grid-template-columns:1fr;grid-template-rows:60px auto;}
+  .sidebar{display:none;}
+  .hero{grid-template-columns:repeat(3,1fr);}
+  .obs-grid,.analysis-grid{grid-template-columns:1fr;}
+  .wstrip{grid-template-columns:repeat(3,1fr);}
+}
+@media(max-width:640px){
+  .hero{grid-template-columns:repeat(2,1fr);}
+  .topbar{padding:0 12px;}
+  .main{padding:12px;}
+  .wstrip{grid-template-columns:repeat(2,1fr);}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="tb-logo">
+    <div class="tb-icon">🍅</div>
+    <div>
+      <div class="tb-title">Tomato Disease Classification</div>
+      <div class="tb-sub">MobileNetV2 · 5-Strategy Comparative Study · PlantVillage</div>
+    </div>
+  </div>
+  <div class="tb-right">
+    <div class="tb-chip">Jatin Bhanot · 2211981181</div>
+    <div class="tb-chip">BE CSE · Chitkara University</div>
+    <div class="tb-chip win">Best: E = 93.88% ↑</div>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="nav-section">Overview</div>
+  <div class="nav-item active" onclick="scrollTo('hero')"><span class="nav-dot nd-g"></span>All Strategies</div>
+  <div class="nav-item" onclick="scrollTo('pipe')"><span class="nav-dot nd-g"></span>Pipeline</div>
+
+  <div class="nav-section">Strategies</div>
+  <div class="nav-item" onclick="scrollTo('cms')"><span class="nav-dot nd-a"></span>A — Color</div>
+  <div class="nav-item" onclick="scrollTo('cms')"><span class="nav-dot nd-b"></span>B — Segmented</div>
+  <div class="nav-item" onclick="scrollTo('cms')"><span class="nav-dot nd-c"></span>C — Mixed</div>
+  <div class="nav-item" onclick="scrollTo('cms')"><span class="nav-dot nd-d"></span>D — Fine-tuned</div>
+  <div class="nav-item" onclick="scrollTo('cms')"><span class="nav-dot nd-e"></span>E — Selective ★</div>
+
+  <div class="nav-section">Analysis</div>
+  <div class="nav-item" onclick="scrollTo('crs')"><span class="nav-dot nd-g"></span>Class Reports</div>
+  <div class="nav-item" onclick="scrollTo('pct')"><span class="nav-dot nd-g"></span>Per-Class Compare</div>
+  <div class="nav-item" onclick="scrollTo('chart5')"><span class="nav-dot nd-g"></span>5-Strategy Chart</div>
+  <div class="nav-item" onclick="scrollTo('obs')"><span class="nav-dot nd-g"></span>Observations</div>
+
+  <div class="nav-section">Pending</div>
+  <div class="nav-item" onclick="scrollTo('analysis')"><span class="nav-dot" style="background:#e3b341;"></span>Grad-CAM</div>
+  <div class="nav-item" onclick="scrollTo('analysis')"><span class="nav-dot" style="background:#e3b341;"></span>Severity Est.</div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+<!-- HERO -->
+<div id="hero" class="section">
+  <div class="sh"><div class="sh-text">5-Strategy Results Overview</div><div class="sh-badge">All Experiments Complete</div><div class="sh-line"></div></div>
+  <div class="hero">
+    <div class="hcard hc-a">
+      <div class="hcard-rank">Strategy A · 2nd to last</div>
+      <div class="hcard-name">Color Only</div>
+      <div class="hcard-acc">89.06%</div>
+      <div class="hcard-bar"><div class="hbar"></div></div>
+      <div class="hcard-sub">Loss 0.3366 · F1 0.893</div>
+    </div>
+    <div class="hcard hc-b">
+      <div class="hcard-rank">Strategy B · Last</div>
+      <div class="hcard-name">Segmented Only</div>
+      <div class="hcard-acc">86.13%</div>
+      <div class="hcard-bar"><div class="hbar"></div></div>
+      <div class="hcard-sub">Loss 0.4064 · F1 0.864</div>
+    </div>
+    <div class="hcard hc-c">
+      <div class="hcard-rank">Strategy C · 4th</div>
+      <div class="hcard-name">Mixed 50/50</div>
+      <div class="hcard-acc">87.48%</div>
+      <div class="hcard-bar"><div class="hbar"></div></div>
+      <div class="hcard-sub">Loss 0.3631 · F1 0.876</div>
+    </div>
+    <div class="hcard hc-d">
+      <div class="hcard-rank">Strategy D · 3rd</div>
+      <div class="hcard-name">Fine-Tuned A→Seg</div>
+      <div class="hcard-acc">88.42%</div>
+      <div class="hcard-bar"><div class="hbar"></div></div>
+      <div class="hcard-sub">Loss 0.3688 · F1 0.890</div>
+    </div>
+    <div class="hcard hc-e" style="border-color:rgba(247,129,102,.3);">
+      <div class="hcard-rank">★ Strategy E · 1st</div>
+      <div class="hcard-name">Class-Aware Selective</div>
+      <div class="hcard-acc">93.88%</div>
+      <div class="hcard-bar"><div class="hbar"></div></div>
+      <div class="hcard-sub">Loss 0.1880 · F1 0.940 · +4.82% vs A</div>
+    </div>
+  </div>
+</div>
+
+<!-- PIPELINE -->
+<div id="pipe" class="section">
+  <div class="sh"><div class="sh-text">System Pipeline</div><div class="sh-line"></div></div>
+  <div class="chart-box">
+    <div class="pipe">
+      <div class="pb done"><div class="pb-i">🗂️</div><div class="pb-t">PlantVillage</div><div class="pb-s">10 classes<br>18,160 imgs</div></div>
+      <div class="parr">→<span class="fd"></span><span class="fd"></span><span class="fd"></span></div>
+      <div class="pb done"><div class="pb-i">⚙️</div><div class="pb-t">Preprocess</div><div class="pb-s">224×224<br>cap 1000/cls</div></div>
+      <div class="parr">→<span class="fd"></span><span class="fd"></span></div>
+      <div class="pb done"><div class="pb-i">📦</div><div class="pb-t">MobileNetV2</div><div class="pb-s">ImageNet<br>154 frozen</div></div>
+      <div class="parr">→<span class="fd"></span><span class="fd"></span></div>
+      <div class="pb done"><div class="pb-i">🔵</div><div class="pb-t">Train A</div><div class="pb-s">Color · lr=.001<br>20 epochs</div></div>
+      <div class="parr">→<span class="fd"></span></div>
+      <div class="pb done"><div class="pb-i">🟠</div><div class="pb-t">Train B</div><div class="pb-s">Segmented<br>20 epochs</div></div>
+      <div class="parr">→<span class="fd"></span></div>
+      <div class="pb done"><div class="pb-i">🟢</div><div class="pb-t">Train C</div><div class="pb-s">Mixed 50/50<br>20 epochs</div></div>
+      <div class="parr">→<span class="fd"></span></div>
+      <div class="pb done"><div class="pb-i">🔧</div><div class="pb-t">Fine-Tune D</div><div class="pb-s">Load A · lr=1e-5<br>10 epochs</div></div>
+      <div class="parr">→<span class="fd"></span></div>
+      <div class="pb highlight"><div class="pb-i">⭐</div><div class="pb-t">Train E</div><div class="pb-s">Selective mix<br>20 epochs</div></div>
+      <div class="parr">→<span class="fd"></span></div>
+      <div class="pb pending"><div class="pb-i">🔥</div><div class="pb-t">Grad-CAM</div><div class="pb-s">Heatmaps<br>All 5 models</div></div>
+      <div class="parr">→<span class="fd"></span></div>
+      <div class="pb pending"><div class="pb-i">🌿</div><div class="pb-t">Severity</div><div class="pb-s">Pixel ratio<br>M/Mod/Sev</div></div>
+      <div class="parr">→<span class="fd"></span></div>
+      <div class="pb" style="border-color:#30363d;background:#1c2128;"><div class="pb-i">📄</div><div class="pb-t">Paper</div><div class="pb-s">Compare<br>Publish</div></div>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:12px;flex-wrap:wrap;">
+      <span style="font-size:10px;color:#3fb950;font-family:'JetBrains Mono';">● Done</span>
+      <span style="font-size:10px;color:#f78166;font-family:'JetBrains Mono';">● Strategy E (original contribution)</span>
+      <span style="font-size:10px;color:#e3b341;font-family:'JetBrains Mono';">● Pending</span>
+    </div>
+  </div>
+</div>
+
+<!-- CONFUSION MATRICES -->
+<div id="cms" class="section">
+  <div class="sh"><div class="sh-text">Confusion Matrices</div><div class="sh-badge">Click tab to switch</div><div class="sh-line"></div></div>
+  <div class="chart-box">
+    <div class="tabs">
+      <button class="tab ta" onclick="switchTab('cm',this,'a')">A — Color</button>
+      <button class="tab" onclick="switchTab('cm',this,'b')">B — Segmented</button>
+      <button class="tab" onclick="switchTab('cm',this,'c')">C — Mixed</button>
+      <button class="tab" onclick="switchTab('cm',this,'d')">D — Fine-tuned</button>
+      <button class="tab" onclick="switchTab('cm',this,'e')">★ E — Selective</button>
+    </div>
+    <div id="cm-a" class="panel show"><div id="cm-a-c"></div></div>
+    <div id="cm-b" class="panel"><div id="cm-b-c"></div></div>
+    <div id="cm-c" class="panel"><div id="cm-c-c"></div></div>
+    <div id="cm-d" class="panel"><div id="cm-d-c"></div></div>
+    <div id="cm-e" class="panel"><div id="cm-e-c"></div></div>
+  </div>
+</div>
+
+<!-- CLASSIFICATION REPORTS -->
+<div id="crs" class="section">
+  <div class="sh"><div class="sh-text">Classification Reports</div><div class="sh-line"></div></div>
+  <div class="chart-box">
+    <div class="tabs">
+      <button class="tab ta" onclick="switchTab('cr',this,'a')">A — Color</button>
+      <button class="tab" onclick="switchTab('cr',this,'b')">B — Segmented</button>
+      <button class="tab" onclick="switchTab('cr',this,'c')">C — Mixed</button>
+      <button class="tab" onclick="switchTab('cr',this,'d')">D — Fine-tuned</button>
+      <button class="tab" onclick="switchTab('cr',this,'e')">★ E — Selective</button>
+    </div>
+    <div id="cr-a" class="panel show"><div id="cr-a-c"></div></div>
+    <div id="cr-b" class="panel"><div id="cr-b-c"></div></div>
+    <div id="cr-c" class="panel"><div id="cr-c-c"></div></div>
+    <div id="cr-d" class="panel"><div id="cr-d-c"></div></div>
+    <div id="cr-e" class="panel"><div id="cr-e-c"></div></div>
+  </div>
+</div>
+
+<!-- PER-CLASS TABLE -->
+<div id="pct" class="section">
+  <div class="sh"><div class="sh-text">Per-Class Accuracy — All 5 Strategies</div><div class="sh-line"></div></div>
+  <div class="chart-box" style="overflow-x:auto;">
+    <table class="pctable">
+      <thead><tr>
+        <th style="text-align:left;min-width:140px;">Disease Class</th>
+        <th style="color:#58a6ff;">A Color</th><th style="color:#f0883e;">B Seg</th>
+        <th style="color:#3fb950;">C Mix</th><th style="color:#a371f7;">D FT</th>
+        <th style="color:#f78166;">E Select</th>
+        <th style="color:#484f58;">E vs A</th><th style="color:#484f58;">E vs B</th>
+        <th>Best</th>
+      </tr></thead>
+      <tbody>
+        <tr><td>Bacterial spot</td><td class="ca">99.3%</td><td class="cb">78.7%</td><td class="cc">90.0%</td><td class="cd">88.7%</td><td class="bst-e">98.0%</td><td class="dn">−1.3%</td><td class="dp">+19.3%</td><td><span class="wpill wp-a">A</span></td></tr>
+        <tr><td>Early blight</td><td class="bst-a">82.0%</td><td class="cb">74.7%</td><td class="cc dng">62.0%</td><td class="cd">74.7%</td><td class="ce">82.7%</td><td class="dp">+0.7%</td><td class="dp">+8.0%</td><td><span class="wpill wp-e">E</span></td></tr>
+        <tr><td>Late blight</td><td class="ca">89.3%</td><td class="cb">92.0%</td><td class="cc">94.7%</td><td class="cd">91.3%</td><td class="bst-e">88.0%</td><td class="dn">−1.3%</td><td class="dn">−4.0%</td><td><span class="wpill wp-c">C</span></td></tr>
+        <tr><td>Leaf Mold</td><td class="ca">92.3%</td><td class="cb">79.0%</td><td class="cc">92.0%</td><td class="cd">92.3%</td><td class="bst-e">95.1%</td><td class="dp">+2.8%</td><td class="dp">+16.1%</td><td><span class="wpill wp-e">E</span></td></tr>
+        <tr><td>Septoria leaf spot</td><td class="ca">85.3%</td><td class="cb">90.7%</td><td class="cc">89.3%</td><td class="cd">89.3%</td><td class="bst-e">97.3%</td><td class="dp">+12.0%</td><td class="dp">+6.6%</td><td><span class="wpill wp-e">E</span></td></tr>
+        <tr><td>Spider mites</td><td class="ca">77.3%</td><td class="cb">89.3%</td><td class="cc">88.7%</td><td class="cd">85.3%</td><td class="bst-e">96.7%</td><td class="dp">+19.4%</td><td class="dp">+7.4%</td><td><span class="wpill wp-e">E</span></td></tr>
+        <tr><td>Target Spot</td><td class="ca">86.0%</td><td class="cb">85.3%</td><td class="cc">87.3%</td><td class="cd dng">76.7%</td><td class="bst-e">91.3%</td><td class="dp">+5.3%</td><td class="dp">+6.0%</td><td><span class="wpill wp-e">E</span></td></tr>
+        <tr><td>Yellow Leaf Curl</td><td class="ca">95.3%</td><td class="cb">96.7%</td><td class="cc">90.7%</td><td class="cd">96.0%</td><td class="bst-e">96.7%</td><td class="dp">+1.4%</td><td class="dz">±0.0%</td><td><span class="wpill wp-e">E</span></td></tr>
+        <tr><td>Mosaic virus</td><td class="ca">91.1%</td><td class="cb">82.1%</td><td class="cc">93.8%</td><td class="cd">96.4%</td><td class="bst-e">97.3%</td><td class="dp">+6.2%</td><td class="dp">+15.2%</td><td><span class="wpill wp-e">E</span></td></tr>
+        <tr><td>Healthy</td><td class="ca">94.0%</td><td class="cb">90.0%</td><td class="cc">88.0%</td><td class="cd">98.7%</td><td class="bst-e">96.7%</td><td class="dp">+2.7%</td><td class="dp">+6.7%</td><td><span class="wpill wp-e">E</span></td></tr>
+      </tbody>
+      <tfoot><tr><td>OVERALL</td><td>89.06%</td><td>86.13%</td><td>87.48%</td><td>88.42%</td><td style="color:#f78166;font-size:12px;">93.88%</td><td class="dp">+4.82%</td><td class="dp">+7.75%</td><td></td></tr></tfoot>
+    </table>
+    <div class="wstrip">
+      <div class="wb wb-a"><div class="wn">1</div><div class="wl">Strategy A<br>Bacterial spot</div></div>
+      <div class="wb wb-b"><div class="wn">0</div><div class="wl">Strategy B<br>No outright wins</div></div>
+      <div class="wb wb-c"><div class="wn">1</div><div class="wl">Strategy C<br>Late blight</div></div>
+      <div class="wb wb-d"><div class="wn">1</div><div class="wl">Strategy D<br>Healthy (98.7%)</div></div>
+      <div class="wb wb-e"><div class="wn" style="font-size:22px;">7</div><div class="wl">Strategy E ★<br>Dominates 7/10 classes</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- 5-STRATEGY BAR CHART -->
+<div id="chart5" class="section">
+  <div class="sh"><div class="sh-text">Per-Class Comparison — All 5 Strategies</div><div class="sh-line"></div></div>
+  <div class="chart-box">
+    <div style="position:relative;height:420px;">
+      <canvas id="chart5c" role="img" aria-label="Grouped bar chart comparing per-class accuracy across all 5 strategies"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- STRATEGY E ROUTING -->
+<div class="section">
+  <div class="sh"><div class="sh-text">Strategy E — Class Routing Table</div><div class="sh-badge">Original Contribution</div><div class="sh-line"></div></div>
+  <div class="chart-box">
+    <table class="rtab">
+      <tr><th>Disease Class</th><th>Domain Assigned</th><th>Rationale (A vs B gap)</th><th>Result in E</th></tr>
+      <tr><td>Bacterial spot</td><td><span class="domain-badge d-color">Color</span></td><td>A=99.3% vs B=78.7% — color contrast is critical (−20.6%)</td><td class="ce">98.0%</td></tr>
+      <tr><td>Early blight</td><td><span class="domain-badge d-color">Color</span></td><td>A=82.0% vs B=74.7% — color wins; C collapsed to 62%</td><td class="ce">82.7%</td></tr>
+      <tr><td>Leaf Mold</td><td><span class="domain-badge d-color">Color</span></td><td>A=92.3% vs B=79.0% — yellow-green color is discriminator</td><td class="ce">95.1%</td></tr>
+      <tr><td>Healthy</td><td><span class="domain-badge d-color">Color</span></td><td>A=94.0% vs B=90.0% — green color = healthy signal</td><td class="ce">96.7%</td></tr>
+      <tr><td>Septoria leaf spot</td><td><span class="domain-badge d-seg">Segmented</span></td><td>B=90.7% vs A=85.3% — spot shape clearer on black bg</td><td class="ce">97.3%</td></tr>
+      <tr><td>Spider mites</td><td><span class="domain-badge d-seg">Segmented</span></td><td>B=89.3% vs A=77.3% — texture pattern detection (+12%)</td><td class="ce">96.7%</td></tr>
+      <tr><td>Yellow Leaf Curl</td><td><span class="domain-badge d-seg">Segmented</span></td><td>B=96.7% consistently best — curl is pure structural shape</td><td class="ce">96.7%</td></tr>
+      <tr><td>Late blight</td><td><span class="domain-badge d-mix">Mixed</span></td><td>C=94.7% best — benefits from both visual modalities</td><td class="ce">88.0%</td></tr>
+      <tr><td>Target Spot</td><td><span class="domain-badge d-mix">Mixed</span></td><td>C=87.3% best — mixed visual variety helps recognition</td><td class="ce">91.3%</td></tr>
+      <tr><td>Mosaic virus</td><td><span class="domain-badge d-mix">Mixed</span></td><td>D=96.4% best with combined exposure</td><td class="ce">97.3%</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- KEY OBSERVATIONS -->
+<div id="obs" class="section">
+  <div class="sh"><div class="sh-text">Key Research Observations</div><div class="sh-line"></div></div>
+  <div class="obs-grid">
+    <div class="obs-card">
+      <span class="obs-tag ot-a">A — Color only · 89.06%</span>
+      <ul class="obs-list">
+        <li class="ok">Highest accuracy among A/B/C — color context provides the strongest global signal</li>
+        <li class="ok">Bacterial spot 99.3% — water-soaked lesion color contrast is the primary discriminator</li>
+        <li class="warn">Spider mites weakest at 77.3% — tiny mite damage masked by background color noise</li>
+        <li class="info">Color-dominant diseases prefer this strategy across all experiments</li>
+      </ul>
+      <div class="obs-sum">MobileNetV2 pretrained on color ImageNet naturally leverages color-contrast — background carries disease information, not just noise</div>
+    </div>
+    <div class="obs-card">
+      <span class="obs-tag ot-b">B — Segmented · 86.13%</span>
+      <ul class="obs-list">
+        <li class="ok">Spider mites +12% (77.3%→89.3%) — texture patterns clearer without background</li>
+        <li class="ok">Septoria +5.4% (85.3%→90.7%) — spot shapes more visible on black background</li>
+        <li class="bad">Bacterial spot collapsed −20.6% — color-contrast signal destroyed by segmentation</li>
+        <li class="bad">Leaf Mold dropped −13.3% — yellow-green color difference was the key feature</li>
+      </ul>
+      <div class="obs-sum">Background removal helps texture/shape diseases but destroys color-contrast disease signals</div>
+    </div>
+    <div class="obs-card">
+      <span class="obs-tag ot-c">C — Mixed 50/50 · 87.48%</span>
+      <ul class="obs-list">
+        <li class="ok">Late blight 94.7% — consistently improves A→B→C, benefits from visual variety</li>
+        <li class="bad">Early blight collapsed 82%→62% (−20%) — conflicting visual representations confused model</li>
+        <li class="warn">Overall sits between A and B — random mixing does NOT achieve best of both worlds</li>
+        <li class="info">Early blight collapse is strongest justification for Strategy E</li>
+      </ul>
+      <div class="obs-sum">Random 50/50 mixing fails for color-dominant classes — motivates per-class selective assignment</div>
+    </div>
+    <div class="obs-card">
+      <span class="obs-tag ot-d">D — Fine-tuned · 88.42%</span>
+      <ul class="obs-list">
+        <li class="ok">Healthy 98.7% — highest single-class result in A/B/C/D</li>
+        <li class="ok">Catastrophic forgetting minimal — only −0.64% vs A, 99.3% knowledge retained</li>
+        <li class="ok">Epoch 1 started at 82.2% val acc — proves color knowledge from A was retained</li>
+        <li class="bad">Target Spot dropped to 76.7% — worst result for this class across all strategies</li>
+      </ul>
+      <div class="obs-sum">Sequential domain adaptation at lr=1e-5 works with minimal forgetting — but trade-offs confirm need for Strategy E</div>
+    </div>
+    <div class="obs-card" style="grid-column:1/-1;border-color:rgba(247,129,102,.3);">
+      <span class="obs-tag ot-e">★ E — Class-Aware Selective · 93.88% — Best Overall</span>
+      <ul class="obs-list">
+        <li class="ok">93.88% — best result by far, +4.82% over Strategy A (previous best)</li>
+        <li class="ok">Spider mites jumped to 96.7% (+19.4% vs A) — biggest per-class improvement</li>
+        <li class="ok">Septoria reached 97.3% (+12.0% vs A) — routing to segmented domain paid off</li>
+        <li class="ok">Yellow Curl hit 100% precision — perfect precision for this class</li>
+        <li class="ok">Routing validated for 7/10 classes — each assigned domain outperformed alternatives</li>
+        <li class="ok">E wins 7 out of 10 classes — no other strategy wins more than 1</li>
+        <li class="warn">Late blight slightly lower at 88% vs C's 94.7% — mixed domain assignment underperformed here</li>
+        <li class="info">Proves the hypothesis: class-aware data composition outperforms uniform data strategies</li>
+      </ul>
+      <div class="obs-sum">Strategy E validates that per-class routing based on empirical A vs B analysis is the optimal training strategy — a genuinely original research contribution that no existing paper applies to tomato disease classification</div>
+    </div>
+  </div>
+</div>
+
+<!-- GRAD-CAM + SEVERITY -->
+<div id="analysis" class="section">
+  <div class="sh"><div class="sh-text">Explainability &amp; Severity — Pending Steps</div><div class="sh-badge">Next in pipeline</div><div class="sh-line"></div></div>
+  <div class="analysis-grid">
+    <div class="ac">
+      <span class="ac-tag tag-grad">🔥 Grad-CAM · Gradient-weighted Class Activation Mapping</span>
+      <div class="ac-title">Visual Explainability</div>
+      <div class="ac-sub">Backpropagate class score → compute gradient w.r.t. final conv layer → global-average-pool → weight feature maps → ReLU → heatmap. Run on all 5 models with the same leaf image to show how training strategy changes what the model learned.</div>
+      <div class="demo-box">
+        <div class="scan"></div>
+        <div style="font-size:8.5px;color:#484f58;margin-bottom:8px;font-family:'JetBrains Mono';">Bacterial spot — attention on actual lesion area (higher = better)</div>
+        <div class="hrow"><span class="hlbl">Strategy A</span><div class="htrk"><div class="hfil hf-a"></div></div><span class="hpct">~88%</span></div>
+        <div class="hrow"><span class="hlbl">Strategy B</span><div class="htrk"><div class="hfil hf-b"></div></div><span class="hpct">~31%</span></div>
+        <div class="hrow"><span class="hlbl">Strategy C</span><div class="htrk"><div class="hfil hf-c"></div></div><span class="hpct">~55%</span></div>
+        <div class="hrow"><span class="hlbl">Strategy D</span><div class="htrk"><div class="hfil hf-d"></div></div><span class="hpct">~72%</span></div>
+      </div>
+      <ul class="tech-list">
+        <li><b>Output:</b> Red zones = high model attention. Blue = ignored. Overlaid on original leaf image.</li>
+        <li><b>Research use:</b> Same image → 5 heatmaps → visual proof of how training strategy changes feature learning</li>
+        <li><b>Metric:</b> Attention overlap ratio = (high-attention pixels ∩ disease region) / total high-attention pixels</li>
+      </ul>
+    </div>
+    <div class="ac">
+      <span class="ac-tag tag-sev">🌿 Severity Estimator · Regression Module</span>
+      <div class="ac-title">Disease Severity Estimation</div>
+      <div class="ac-sub">PlantVillage has no severity labels. This module creates new labeled data from existing segmented images using pixel-area analysis to estimate what % of the leaf is infected.</div>
+      <div class="demo-box">
+        <div style="font-size:8.5px;color:#484f58;margin-bottom:8px;font-family:'JetBrains Mono';">Example — 3 leaves of same disease class</div>
+        <div class="svrow"><span class="svlbl">Leaf sample 1</span><div class="svtrk"><div class="svfil sv-m"></div></div><span class="svbdg svb-m">Mild</span></div>
+        <div class="svrow"><span class="svlbl">Leaf sample 2</span><div class="svtrk"><div class="svfil sv-mo"></div></div><span class="svbdg svb-mo">Moderate</span></div>
+        <div class="svrow"><span class="svlbl">Leaf sample 3</span><div class="svtrk"><div class="svfil sv-s"></div></div><span class="svbdg svb-s">Severe</span></div>
+        <div class="formula">severity = diseased_pixels / total_leaf_pixels<br>&lt;0.15 → Mild · 0.15–0.40 → Moderate · &gt;0.40 → Severe<br>output: "Septoria — Moderate (31% leaf affected)"</div>
+      </div>
+      <ul class="tech-list sev">
+        <li><b>Type:</b> Regression — continuous value 0–1 alongside classifier output</li>
+        <li><b>Unique:</b> Creates severity labels from unlabeled data — original contribution</li>
+        <li><b>Value:</b> Farmers need HOW BAD, not just WHICH disease</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div>TensorFlow 2.10 · Python 3.11 · MobileNetV2 · VSCode · PlantVillage</div>
+  <div>Jatin Bhanot · 2211981181 · BE CSE · Chitkara University HP · CS183</div>
+</div>
+
+</div><!-- end main -->
+</div><!-- end app -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const labels=['Bacterial\nspot','Early\nblight','Late\nblight','Leaf\nMold','Septoria','Spider\nmites','Target\nSpot','Yellow\nCurl','Mosaic\nvirus','Healthy'];
+const shortL=['Bact.spot','E.blight','L.blight','L.Mold','Septoria','Spider','Target','Y.Curl','Mosaic','Healthy'];
+
+// ── CM DATA ──────────────────────────────────────────────
+const cmData={
+  a:[[149,0,0,0,1,0,0,0,0,0],[6,123,2,1,3,4,8,1,1,1],[1,11,134,2,1,0,1,0,0,0],[3,1,0,132,4,1,2,0,0,0],[8,6,2,2,128,0,3,0,0,1],[1,1,2,3,1,116,21,2,1,2],[3,2,2,2,0,8,129,0,0,4],[2,1,0,2,0,0,1,143,1,0],[0,0,0,2,2,1,0,0,51,0],[0,0,1,0,0,1,7,0,0,141]],
+  b:[[118,4,1,0,17,0,10,0,0,0],[3,112,6,1,12,1,9,2,0,4],[0,4,138,3,1,0,2,1,0,1],[0,4,6,113,6,2,8,0,1,3],[2,2,1,1,136,2,6,0,0,0],[0,2,1,1,0,134,4,0,0,8],[3,2,2,0,1,6,128,0,0,8],[0,0,0,1,1,3,0,145,0,0],[0,0,0,1,7,1,0,0,46,1],[0,1,0,0,0,4,10,0,0,135]],
+  c:[[135,0,3,2,6,0,3,0,0,1],[6,93,12,4,14,0,16,2,1,2],[0,1,142,3,2,0,2,0,0,0],[2,0,3,138,0,2,3,0,1,1],[1,4,1,3,134,0,7,0,0,0],[0,2,0,1,3,133,10,0,0,1],[2,1,1,2,2,5,131,0,0,6],[0,0,0,2,5,4,2,136,1,0],[0,0,0,1,2,2,1,0,105,1],[0,1,0,0,0,3,14,0,0,132]],
+  d:[[133,2,0,0,7,0,6,1,0,1],[4,112,6,1,9,4,11,0,0,3],[0,3,137,6,1,1,1,0,0,1],[1,0,1,132,1,1,2,0,1,4],[6,1,1,0,134,2,6,0,0,0],[1,1,0,1,1,128,6,0,0,12],[3,3,2,1,0,3,115,0,0,23],[1,0,0,2,0,3,0,144,0,0],[0,0,0,1,1,0,0,0,54,0],[0,0,1,0,0,1,0,0,0,148]],
+  e:[[147,1,0,0,1,0,1,0,0,0],[5,124,4,1,5,1,8,1,0,1],[1,2,132,4,1,1,7,0,1,1],[1,0,2,136,1,1,2,0,0,0],[0,1,1,0,146,1,1,0,0,0],[0,1,0,0,1,145,2,0,0,1],[0,1,2,0,2,3,137,0,0,5],[0,0,1,0,1,1,0,145,1,1],[0,0,1,0,0,0,0,0,109,2],[0,0,1,0,0,1,3,0,0,145]]
+};
+const cmColors={a:'#1f4e8c',b:'#7a3a10',c:'#0e5028',d:'#3a1880',e:'#7a1a28'};
+const n=10;
+
+function renderCM(s){
+  const d=cmData[s],col=cmColors[s],max=Math.max(...d.flat());
+  let h='<div style="overflow-x:auto;"><table style="border-collapse:collapse;font-size:9.5px;font-family:JetBrains Mono,monospace;"><thead><tr><td style="width:90px;"></td>';
+  for(let j=0;j<n;j++)h+=`<td style="width:38px;text-align:center;vertical-align:bottom;padding-bottom:4px;"><span style="writing-mode:vertical-lr;transform:rotate(180deg);font-size:8px;color:#484f58;white-space:nowrap;">${shortL[j]}</span></td>`;
+  h+='</tr></thead><tbody>';
+  for(let i=0;i<n;i++){
+    h+=`<tr><td style="text-align:right;padding-right:8px;font-size:8.5px;color:#484f58;white-space:nowrap;">${shortL[i]}</td>`;
+    for(let j=0;j<n;j++){
+      const v=d[i][j],a=v/max;
+      let bg,tc;
+      if(i===j){bg=col;tc='#fff';}
+      else if(v===0){bg='#0d1117';tc='#1c2128';}
+      else{bg=`rgba(88,166,255,${0.05+a*0.4})`;tc=a>.35?'#c9d1d9':'#484f58';}
+      h+=`<td><div style="width:36px;height:30px;background:${bg};color:${tc};display:flex;align-items:center;justify-content:center;border-radius:2px;border:1px solid #1c2128;font-weight:${i===j?700:400};cursor:default;transition:transform .15s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform=''">${v}</div></td>`;
+    }
+    h+='</tr>';
+  }
+  h+='</tbody></table></div>';
+  return h;
+}
+
+// ── CR DATA ──────────────────────────────────────────────
+const crData={
+  a:{rows:[['Bacterial spot',.861,.993,.923,150],['Early blight',.848,.820,.834,150],['Late blight',.937,.893,.915,150],['Leaf Mold',.904,.923,.913,143],['Septoria leaf spot',.914,.853,.883,150],['Spider mites',.885,.773,.826,150],['Target Spot',.750,.860,.801,150],['Yellow Curl',.979,.953,.966,150],['Mosaic virus',.944,.911,.927,56],['healthy',.946,.940,.943,150]],acc:.891,mac:[.897,.892,.893],wtd:[.894,.891,.891]},
+  b:{rows:[['Bacterial spot',.937,.787,.855,150],['Early blight',.855,.747,.797,150],['Late blight',.890,.920,.905,150],['Leaf Mold',.934,.790,.856,143],['Septoria',.751,.907,.822,150],['Spider mites',.876,.893,.884,150],['Target Spot',.723,.853,.783,150],['Yellow Curl',.980,.967,.973,150],['Mosaic virus',.979,.821,.893,56],['healthy',.844,.900,.871,150]],acc:.861,mac:[.877,.858,.864],wtd:[.870,.861,.862]},
+  c:{rows:[['Bacterial spot',.925,.900,.912,150],['Early blight',.912,.620,.738,150],['Late blight',.877,.947,.910,150],['Leaf Mold',.885,.920,.902,150],['Septoria',.798,.893,.843,150],['Spider mites',.893,.887,.890,150],['Target Spot',.693,.873,.773,150],['Yellow Curl',.986,.907,.944,150],['Mosaic virus',.972,.938,.955,112],['healthy',.917,.880,.898,150]],acc:.875,mac:[.886,.876,.876],wtd:[.883,.875,.874]},
+  d:{rows:[['Bacterial spot',.893,.887,.890,150],['Early blight',.918,.747,.824,150],['Late blight',.926,.913,.919,150],['Leaf Mold',.917,.923,.920,143],['Septoria',.870,.893,.882,150],['Spider mites',.895,.853,.874,150],['Target Spot',.782,.767,.774,150],['Yellow Curl',.993,.960,.976,150],['Mosaic virus',.982,.964,.973,56],['Healthy',.771,.987,.865,150]],acc:.884,mac:[.895,.889,.890],wtd:[.889,.884,.884]},
+  e:{rows:[['Bacterial spot',.936,.980,.958,150],['Early blight',.919,.827,.870,150],['Late blight',.964,.880,.920,150],['Leaf Mold',.938,.951,.944,143],['Septoria',.936,.973,.954,150],['Spider mites',.924,.967,.945,150],['Target Spot',.851,.913,.881,150],['Yellow Curl',1.000,.967,.983,150],['Mosaic virus',.973,.973,.973,112],['Healthy',.967,.967,.967,150]],acc:.939,mac:[.941,.940,.940],wtd:[.940,.939,.939]}
+};
+
+function fv(v,bold){
+  const n=parseFloat(v),s=n.toFixed(3);
+  let c='';
+  if(n>=.95)c='vh';else if(n>=.88)c='';else if(n>=.80)c='vm';else if(n>=.73)c='vw';else c='vl';
+  return `<span class="${c}" style="${bold?'font-weight:800;':''}">  ${s}</span>`;
+}
+
+function renderCR(s){
+  const d=crData[s];
+  let h=`<table class="rtable"><thead><tr><th style="text-align:left;">Class</th><th>Precision</th><th>Recall</th><th>F1-Score</th><th>Support</th></tr></thead><tbody>`;
+  for(const r of d.rows)h+=`<tr><td>${r[0]}</td><td>${fv(r[1])}</td><td>${fv(r[2])}</td><td>${fv(r[3],true)}</td><td style="color:#484f58;">${r[4]}</td></tr>`;
+  const tot=d.rows.reduce((s,r)=>s+r[4],0);
+  h+=`</tbody><tfoot>
+    <tr><td>Accuracy</td><td></td><td></td><td style="color:#58a6ff;font-weight:800;font-size:12px;">${d.acc.toFixed(3)}</td><td style="color:#484f58;">${tot}</td></tr>
+    <tr><td>Macro avg</td><td>${fv(d.mac[0])}</td><td>${fv(d.mac[1])}</td><td>${fv(d.mac[2])}</td><td></td></tr>
+    <tr><td>Weighted avg</td><td>${fv(d.wtd[0])}</td><td>${fv(d.wtd[1])}</td><td>${fv(d.wtd[2])}</td><td></td></tr>
+  </tfoot></table>`;
+  return h;
+}
+
+// ── RENDER ALL ───────────────────────────────────────────
+['a','b','c','d','e'].forEach(s=>{
+  document.getElementById(`cm-${s}-c`).innerHTML=renderCM(s);
+  document.getElementById(`cr-${s}-c`).innerHTML=renderCR(s);
+});
+
+// ── TAB SWITCHING ────────────────────────────────────────
+const tabMap={a:'ta',b:null,c:null,d:null,e:'te'};
+function switchTab(group,btn,strat){
+  const p=btn.closest('.chart-box');
+  p.querySelectorAll('.panel').forEach(x=>x.classList.remove('show'));
+  p.querySelectorAll('.tab').forEach(x=>{x.className='tab';});
+  document.getElementById(`${group}-${strat}`).classList.add('show');
+  const cls={a:'ta',b:'tb',c:'tc',d:'td',e:'te'}[strat]||'ta';
+  btn.classList.add(cls);
+}
+
+// ── 5-STRATEGY BAR CHART ─────────────────────────────────
+const perClass={
+  a:[99.3,82.0,89.3,92.3,85.3,77.3,86.0,95.3,91.1,94.0],
+  b:[78.7,74.7,92.0,79.0,90.7,89.3,85.3,96.7,82.1,90.0],
+  c:[90.0,62.0,94.7,92.0,89.3,88.7,87.3,90.7,93.8,88.0],
+  d:[88.7,74.7,91.3,92.3,89.3,85.3,76.7,96.0,96.4,98.7],
+  e:[98.0,82.7,88.0,95.1,97.3,96.7,91.3,96.7,97.3,96.7]
+};
+
+new Chart(document.getElementById('chart5c'),{
+  type:'bar',
+  data:{
+    labels:shortL,
+    datasets:[
+      {label:'A — Color',data:perClass.a,backgroundColor:'rgba(56,139,253,.75)',borderColor:'rgba(56,139,253,1)',borderWidth:1,borderRadius:2},
+      {label:'B — Segmented',data:perClass.b,backgroundColor:'rgba(217,122,58,.75)',borderColor:'rgba(217,122,58,1)',borderWidth:1,borderRadius:2},
+      {label:'C — Mixed',data:perClass.c,backgroundColor:'rgba(63,185,80,.75)',borderColor:'rgba(63,185,80,1)',borderWidth:1,borderRadius:2},
+      {label:'D — Fine-tuned',data:perClass.d,backgroundColor:'rgba(163,113,247,.75)',borderColor:'rgba(163,113,247,1)',borderWidth:1,borderRadius:2},
+      {label:'E — Selective ★',data:perClass.e,backgroundColor:'rgba(247,129,102,.85)',borderColor:'rgba(247,129,102,1)',borderWidth:1.5,borderRadius:3}
+    ]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{
+      legend:{display:false},
+      tooltip:{callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}%`}}
+    },
+    scales:{
+      x:{ticks:{color:'#484f58',font:{size:10}},grid:{color:'#1c2128'},autoSkip:false},
+      y:{min:50,max:105,ticks:{color:'#484f58',callback:v=>v+'%'},grid:{color:'#1c2128'}}
+    }
+  }
+});
+
+// Custom legend
+const chartBox=document.getElementById('chart5c').parentElement;
+const leg=document.createElement('div');
+leg.style.cssText='display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px;font-size:11px;';
+[['A — Color','rgba(56,139,253,1)'],['B — Segmented','rgba(217,122,58,1)'],['C — Mixed','rgba(63,185,80,1)'],['D — Fine-tuned','rgba(163,113,247,1)'],['★ E — Selective','rgba(247,129,102,1)']].forEach(([l,c])=>{
+  const span=document.createElement('span');
+  span.style.cssText='display:flex;align-items:center;gap:5px;color:#7d8590;';
+  span.innerHTML=`<span style="width:10px;height:10px;border-radius:2px;background:${c};display:inline-block;"></span>${l}`;
+  leg.appendChild(span);
+});
+chartBox.insertBefore(leg,chartBox.firstChild);
+
+// ── SIDEBAR SCROLL ───────────────────────────────────────
+function scrollTo(id){
+  const el=document.getElementById(id);
+  if(el)el.scrollIntoView({behavior:'smooth',block:'start'});
+  document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TomatoClassification — Research Architecture</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: #eef1f5;
+  font-family: 'Inter', sans-serif;
+  color: #1e2a3a;
+  overflow-x: auto;
+}
+
+.page {
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 28px 24px 48px;
+}
+
+/* ── ANIMATIONS ─────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(18px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+@keyframes slideIn {
+  from { opacity:0; transform:translateX(-16px); }
+  to   { opacity:1; transform:translateX(0); }
+}
+@keyframes pulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(59,125,216,0); }
+  50%     { box-shadow: 0 0 0 6px rgba(59,125,216,0.12); }
+}
+@keyframes heatPulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(220,60,60,0); }
+  50%     { box-shadow: 0 0 0 8px rgba(220,60,60,0.14); }
+}
+@keyframes greenPulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(30,143,84,0); }
+  50%     { box-shadow: 0 0 0 8px rgba(30,143,84,0.14); }
+}
+@keyframes barGrow {
+  from { transform: scaleY(0); }
+  to   { transform: scaleY(1); }
+}
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+@keyframes scanline {
+  0%   { top: 0%; opacity:0; }
+  5%   { opacity:1; }
+  95%  { opacity:1; }
+  100% { top: 100%; opacity:0; }
+}
+@keyframes dotBlink {
+  0%,100% { opacity:0.3; }
+  50%     { opacity:1; }
+}
+@keyframes arrowFlow {
+  0%   { stroke-dashoffset: 24; }
+  100% { stroke-dashoffset: 0; }
+}
+@keyframes spinSlow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes countUp {
+  from { opacity:0; transform:scale(0.8); }
+  to   { opacity:1; transform:scale(1); }
+}
+
+.fade-up   { animation: fadeUp 0.6s ease both; }
+.slide-in  { animation: slideIn 0.5s ease both; }
+
+/* staggered delays */
+.d1 { animation-delay: 0.05s; }
+.d2 { animation-delay: 0.12s; }
+.d3 { animation-delay: 0.19s; }
+.d4 { animation-delay: 0.26s; }
+.d5 { animation-delay: 0.33s; }
+.d6 { animation-delay: 0.40s; }
+
+/* ── HEADER ─────────────────────────────────────────── */
+.header {
+  background: linear-gradient(135deg, #1e2a3a 0%, #2a3a50 100%);
+  border-radius: 12px;
+  padding: 24px 32px;
+  margin-bottom: 22px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  animation: fadeUp 0.5s ease both;
+  position: relative;
+  overflow: hidden;
+}
+.header::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%; right: 0; bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent);
+  animation: shimmer 3s infinite;
+}
+.header-title { color: #f0f4f8; font-size: 21px; font-weight: 700; }
+.header-sub   { color: #7a95b0; font-size: 12px; margin-top: 5px; font-family: 'JetBrains Mono'; }
+.header-badge {
+  display: inline-block;
+  background: rgba(59,125,216,0.2);
+  border: 1px solid rgba(59,125,216,0.35);
+  color: #7ab4e8;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  margin-top: 8px;
+  text-transform: uppercase;
+}
+.header-meta { text-align:right; color:#5a7590; font-size:11px; line-height:1.8; }
+
+/* ── SECTION LABEL ──────────────────────────────────── */
+.section-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: #7a95b0;
+  margin-bottom: 11px;
+  padding-left: 3px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, #c8d4e0, transparent);
+}
+
+/* ── STRATEGY CARDS ─────────────────────────────────── */
+.strategy-grid {
+  display: grid;
+  grid-template-columns: repeat(4,1fr);
+  gap: 14px;
+  margin-bottom: 22px;
+}
+.strat-card {
+  background: #ffffff;
+  border: 1.5px solid #dde5ee;
+  border-radius: 12px;
+  padding: 18px 18px 14px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.strat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(30,42,58,0.1);
+}
+.strat-card::before {
+  content: '';
+  position: absolute;
+  top:0; left:0; right:0;
+  height: 4px;
+  border-radius: 12px 12px 0 0;
+}
+.strat-a::before { background: linear-gradient(90deg,#3b7dd8,#5b9de8); }
+.strat-b::before { background: linear-gradient(90deg,#d97a3a,#e99a5a); }
+.strat-c::before { background: linear-gradient(90deg,#3aab6a,#5ac88a); }
+.strat-d::before { background: linear-gradient(90deg,#7a5cb8,#9a7cd8); }
+
+.strat-card.strat-a:hover { animation: pulse 2s infinite; }
+
+.strat-label {
+  font-size: 9.5px; font-weight:700;
+  letter-spacing:1.5px; text-transform:uppercase;
+  margin-bottom:5px;
+}
+.strat-a .strat-label { color:#3b7dd8; }
+.strat-b .strat-label { color:#d97a3a; }
+.strat-c .strat-label { color:#3aab6a; }
+.strat-d .strat-label { color:#7a5cb8; }
+
+.strat-name { font-size:14px; font-weight:700; color:#1e2a3a; margin-bottom:10px; }
+.strat-acc  { font-size:32px; font-weight:700; line-height:1; animation: countUp 0.7s ease both; }
+.strat-a .strat-acc { color:#2563ba; }
+.strat-b .strat-acc { color:#c4631a; }
+.strat-c .strat-acc { color:#1e8f54; }
+.strat-d .strat-acc { color:#6340a8; }
+
+.strat-acc-sub { font-size:10.5px; color:#8a9eb8; margin-top:2px; margin-bottom:11px; }
+.strat-row {
+  display:flex; justify-content:space-between;
+  font-size:10.5px; color:#6a8099; padding:3.5px 0;
+  border-top:1px solid #f0f3f7;
+}
+.strat-row span:last-child {
+  font-weight:600; color:#2a3a4a;
+  font-family:'JetBrains Mono'; font-size:10px;
+}
+.badge {
+  display:inline-block; font-size:9px; font-weight:700;
+  letter-spacing:0.8px; padding:3px 9px; border-radius:20px;
+  margin-top:10px; text-transform:uppercase;
+}
+.badge-gold   { background:#fef3c7; color:#92620a; }
+.badge-silver { background:#ebe0ff; color:#5a30a0; }
+.badge-bronze { background:#fdf2ed; color:#9a5520; }
+.badge-grey   { background:#f0f3f7; color:#5a6a7a; }
+
+/* ── PIPELINE ────────────────────────────────────────── */
+.pipeline-wrap {
+  background:#ffffff; border:1.5px solid #dde5ee;
+  border-radius:12px; padding:20px 24px; margin-bottom:22px;
+  overflow-x:auto;
+}
+.pipeline { display:flex; align-items:center; gap:0; padding:8px 0; }
+.pipe-block {
+  flex-shrink:0; background:#f4f7fa; border:1.5px solid #cdd8e4;
+  border-radius:9px; padding:12px 14px; min-width:130px; text-align:center;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.pipe-block:hover {
+  transform:translateY(-2px);
+  box-shadow:0 4px 14px rgba(30,42,58,0.1);
+}
+.pb-icon  { font-size:20px; margin-bottom:5px; }
+.pb-title { font-size:11px; font-weight:700; color:#1e2a3a; }
+.pb-sub   { font-size:9px; color:#6a8099; margin-top:3px; font-family:'JetBrains Mono'; line-height:1.5; }
+.accent-a   { background:#eef4ff; border-color:#93b8e8; }
+.accent-b   { background:#fff5ee; border-color:#e8b88a; }
+.accent-c   { background:#eefff5; border-color:#7acf9e; }
+.accent-d   { background:#f4eeff; border-color:#b89adf; }
+.accent-red { background:#fff0f0; border-color:#e8a8a8; }
+.accent-grn { background:#efffef; border-color:#80c890; }
+.accent-out { background:#1e2a3a; border-color:#1e2a3a; }
+.accent-out .pb-title { color:#e8f0f8; }
+.accent-out .pb-sub   { color:#6a8099; }
+
+.pipe-arrow { flex-shrink:0; width:26px; text-align:center; color:#a0b4c8; font-size:16px; }
+
+/* ── GRAD-CAM + SEVERITY CARDS ──────────────────────── */
+.tools-grid {
+  display:grid; grid-template-columns:1fr 1fr;
+  gap:16px; margin-bottom:22px;
+}
+
+.tool-card {
+  background:#ffffff; border:1.5px solid #dde5ee;
+  border-radius:12px; padding:20px 22px;
+  position:relative; overflow:hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.tool-card:hover {
+  transform:translateY(-3px);
+  box-shadow:0 8px 24px rgba(30,42,58,0.1);
+}
+.tool-card::before {
+  content:''; position:absolute;
+  top:0; left:0; right:0; height:4px;
+  border-radius:12px 12px 0 0;
+}
+.tool-gradcam::before  { background:linear-gradient(90deg,#c03030,#e06060); }
+.tool-severity::before { background:linear-gradient(90deg,#1e8f54,#3aab6a); }
+
+.tool-header {
+  display:flex; align-items:center; gap:12px; margin-bottom:14px;
+}
+.tool-icon {
+  width:44px; height:44px; border-radius:10px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:20px; flex-shrink:0;
+}
+.icon-gradcam  { background:#fff0f0; border:1.5px solid #e8b0b0; animation:heatPulse 2.5s infinite; }
+.icon-severity { background:#efffef; border:1.5px solid #80c890; animation:greenPulse 2.5s infinite; }
+
+.tool-title { font-size:15px; font-weight:700; color:#1e2a3a; }
+.tool-subtitle { font-size:11px; color:#7a95b0; margin-top:2px; }
+
+.tool-body { font-size:12px; color:#3a4a5a; line-height:1.7; margin-bottom:14px; }
+.tool-body strong { color:#1e2a3a; }
+
+.tech-chips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+.chip {
+  font-size:10px; font-weight:600; padding:3px 9px;
+  border-radius:20px; font-family:'JetBrains Mono';
+}
+.chip-red  { background:#fff0f0; color:#a03030; border:1px solid #e8c0c0; }
+.chip-grn  { background:#efffef; color:#1a6a3a; border:1px solid #a0d8b0; }
+.chip-blue { background:#eef4ff; color:#2050a0; border:1px solid #a0c0e8; }
+.chip-grey { background:#f0f3f7; color:#4a5a6a; border:1px solid #c8d4e0; }
+
+/* Grad-CAM heatmap demo */
+.gradcam-demo {
+  display:grid; grid-template-columns:repeat(3,1fr);
+  gap:8px; margin-top:12px;
+}
+.demo-item { text-align:center; }
+.demo-label { font-size:9px; color:#7a95b0; margin-bottom:4px; font-weight:600; letter-spacing:0.5px; }
+.demo-grid {
+  width:100%; aspect-ratio:1;
+  border-radius:6px; overflow:hidden;
+  display:grid; grid-template-columns:repeat(6,1fr);
+  grid-template-rows:repeat(6,1fr); gap:1px;
+  border:1px solid #dde5ee;
+}
+.demo-cell { border-radius:1px; transition:background 0.3s; }
+
+/* Severity bar demo */
+.severity-demo { margin-top:12px; }
+.sev-row {
+  display:flex; align-items:center; gap:10px;
+  margin-bottom:8px; font-size:11px;
+}
+.sev-name { width:100px; color:#3a4a5a; font-weight:500; flex-shrink:0; }
+.sev-bar-wrap {
+  flex:1; height:14px; background:#f0f3f7;
+  border-radius:7px; overflow:hidden; position:relative;
+}
+.sev-bar {
+  height:100%; border-radius:7px;
+  transform-origin:left;
+  animation:barGrow 1s ease both;
+}
+.sev-pct { width:36px; text-align:right; font-weight:700; font-family:'JetBrains Mono'; font-size:10.5px; }
+.sev-tag {
+  font-size:9px; font-weight:700; padding:2px 7px;
+  border-radius:10px; flex-shrink:0;
+}
+.tag-mild   { background:#efffef; color:#1a6a3a; }
+.tag-mod    { background:#fff8e0; color:#8a5c00; }
+.tag-sev    { background:#fff0f0; color:#a03030; }
+
+/* ── PER-CLASS TABLE ─────────────────────────────────── */
+.table-wrap {
+  background:#ffffff; border:1.5px solid #dde5ee;
+  border-radius:12px; padding:20px 24px 16px;
+  margin-bottom:22px; overflow-x:auto;
+}
+table { width:100%; border-collapse:collapse; font-size:12px; }
+thead tr { background:#1e2a3a; }
+thead th {
+  color:#c0d0e0; padding:10px 12px; font-weight:600;
+  font-size:10px; letter-spacing:0.6px; text-align:center;
+}
+thead th:first-child { text-align:left; }
+tbody tr { transition:background 0.15s; }
+tbody tr:nth-child(even) { background:#f7f9fc; }
+tbody tr:hover { background:#eef2f8; }
+tbody td {
+  padding:9px 12px; text-align:center;
+  color:#2a3a4a; font-family:'JetBrains Mono';
+  font-size:11px; border-bottom:1px solid #edf0f4;
+}
+tbody td:first-child {
+  text-align:left; font-family:'Inter';
+  font-weight:600; font-size:12px; color:#1e2a3a;
+}
+.ca { color:#2563ba !important; font-weight:600 !important; }
+.cb { color:#c4631a !important; font-weight:600 !important; }
+.cc { color:#1e8f54 !important; font-weight:600 !important; }
+.cd { color:#6340a8 !important; font-weight:600 !important; }
+.best-a { background:#deeaff !important; color:#1a4fa0 !important; font-weight:700 !important; border-radius:4px; }
+.best-b { background:#ffe8d4 !important; color:#a04010 !important; font-weight:700 !important; border-radius:4px; }
+.best-c { background:#d4f5e4 !important; color:#106038 !important; font-weight:700 !important; border-radius:4px; }
+.best-d { background:#ebe0ff !important; color:#4a2090 !important; font-weight:700 !important; border-radius:4px; }
+.cell-danger { color:#c03030 !important; }
+.cell-warn   { color:#a06000 !important; }
+.dp { color:#1a7a40; font-size:10px; }
+.dn { color:#c03030; font-size:10px; }
+.dz { color:#8a9eb8; font-size:10px; }
+
+.wp {
+  display:inline-block; padding:2px 8px;
+  border-radius:12px; font-size:10px; font-weight:700; font-family:'Inter';
+}
+.wp-a { background:#deeaff; color:#1a4fa0; }
+.wp-b { background:#ffe8d4; color:#a04010; }
+.wp-c { background:#d4f5e4; color:#106038; }
+.wp-d { background:#ebe0ff; color:#4a2090; }
+
+tfoot tr { background:#2a3a4e !important; }
+tfoot td {
+  color:#c0d0e0 !important; font-weight:700 !important;
+  font-size:12px !important; padding:11px 12px !important; border:none !important;
+}
+
+.win-strip {
+  display:grid; grid-template-columns:repeat(4,1fr);
+  gap:10px; margin-top:14px;
+}
+.win-box {
+  text-align:center; padding:12px; border-radius:9px; border:1.5px solid;
+  transition:transform 0.2s;
+}
+.win-box:hover { transform:translateY(-2px); }
+.win-box-a { background:#eef4ff; border-color:#93b8e8; }
+.win-box-b { background:#fff5ee; border-color:#e8b88a; }
+.win-box-c { background:#eefff5; border-color:#7acf9e; }
+.win-box-d { background:#f4eeff; border-color:#b89adf; }
+.win-count { font-size:28px; font-weight:700; animation:countUp 0.7s ease both; }
+.win-box-a .win-count { color:#2563ba; }
+.win-box-b .win-count { color:#c4631a; }
+.win-box-c .win-count { color:#1e8f54; }
+.win-box-d .win-count { color:#6340a8; }
+.win-label { font-size:10px; color:#6a8099; margin-top:3px; font-weight:500; line-height:1.4; }
+
+/* ── OBSERVATIONS ────────────────────────────────────── */
+.obs-grid {
+  display:grid; grid-template-columns:repeat(2,1fr);
+  gap:14px; margin-bottom:22px;
+}
+.obs-card {
+  background:#ffffff; border:1.5px solid #dde5ee;
+  border-radius:12px; padding:18px 20px;
+  transition:transform 0.2s, box-shadow 0.2s;
+}
+.obs-card:hover {
+  transform:translateY(-2px);
+  box-shadow:0 6px 20px rgba(30,42,58,0.08);
+}
+.obs-strat-label {
+  font-size:9.5px; font-weight:700; letter-spacing:1.5px;
+  text-transform:uppercase; padding:3px 10px;
+  border-radius:12px; display:inline-block; margin-bottom:12px;
+}
+.obs-a { background:#deeaff; color:#1a4fa0; }
+.obs-b { background:#ffe8d4; color:#a04010; }
+.obs-c { background:#d4f5e4; color:#106038; }
+.obs-d { background:#ebe0ff; color:#4a2090; }
+.obs-list { list-style:none; }
+.obs-list li {
+  font-size:11.5px; color:#3a4a5a; padding:5px 0 5px 18px;
+  position:relative; line-height:1.5;
+  border-bottom:1px solid #f2f4f7;
+}
+.obs-list li:last-child { border-bottom:none; }
+.obs-list li::before { position:absolute; left:0; font-weight:700; }
+.obs-list .ok::before   { content:'✓'; color:#1e8f54; }
+.obs-list .warn::before { content:'!'; color:#d97a3a; }
+.obs-list .bad::before  { content:'✗'; color:#c03030; }
+.obs-list .info::before { content:'→'; color:#5a7a90; }
+.obs-summary {
+  margin-top:10px; padding:8px 10px; border-radius:7px;
+  font-size:11px; font-weight:600; background:#f4f7fa; color:#3a4a5a;
+}
+
+/* ── STRATEGY E ──────────────────────────────────────── */
+.strat-e-box {
+  background:#fffbec; border:1.5px solid #d4a820;
+  border-radius:12px; padding:20px 24px; margin-bottom:22px;
+  transition:box-shadow 0.2s;
+}
+.strat-e-box:hover { box-shadow:0 6px 20px rgba(180,130,0,0.12); }
+.strat-e-title {
+  font-size:13px; font-weight:700; color:#8a5c00;
+  margin-bottom:12px; letter-spacing:0.5px;
+}
+.e-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:18px; }
+.e-col-title {
+  font-size:9.5px; font-weight:700; letter-spacing:1px;
+  text-transform:uppercase; color:#7a5000; margin-bottom:8px;
+  padding-bottom:4px; border-bottom:1px solid #e8c840;
+}
+.e-item {
+  font-size:11.5px; color:#5a4000; padding:3px 0;
+  display:flex; align-items:center; gap:7px;
+}
+.e-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+.e-dot-color { background:#3b7dd8; }
+.e-dot-seg   { background:#d97a3a; }
+.e-dot-mix   { background:#3aab6a; }
+
+/* ── FOOTER ──────────────────────────────────────────── */
+.footer {
+  background:#1e2a3a; border-radius:10px; padding:13px 22px;
+  display:flex; justify-content:space-between; align-items:center;
+}
+.footer-left  { font-size:10.5px; color:#5a7590; font-family:'JetBrains Mono'; }
+.footer-right { font-size:10.5px; color:#4a6a80; font-family:'JetBrains Mono'; text-align:right; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- HEADER -->
+<div class="header fade-up">
+  <div>
+    <div class="header-title">Tomato Disease Classification — Research Architecture</div>
+    <div class="header-sub">MobileNetV2 Transfer Learning · 4-Strategy Comparative Study · PlantVillage Dataset</div>
+    <div class="header-badge">CS183 Lab Oriented Project · BE CSE · Chitkara University HP</div>
+  </div>
+  <div class="header-meta">
+    Jatin Bhanot<br>
+    Student ID: 2211981181<br>
+    TensorFlow 2.10 · Python 3.11
+  </div>
+</div>
+
+<!-- STRATEGY CARDS -->
+<div class="section-label">Experimental Results — All 4 Strategies</div>
+<div class="strategy-grid">
+  <div class="strat-card strat-a fade-up d1">
+    <div class="strat-label">Strategy A</div>
+    <div class="strat-name">Color Only</div>
+    <div class="strat-acc">89.06%</div>
+    <div class="strat-acc-sub">Test accuracy — Overall best</div>
+    <div class="strat-row"><span>Val accuracy</span><span>88.85%</span></div>
+    <div class="strat-row"><span>Test loss</span><span>0.3366</span></div>
+    <div class="strat-row"><span>Dataset</span><span>9,325 imgs</span></div>
+    <div class="strat-row"><span>Epochs</span><span>20</span></div>
+    <div class="strat-row"><span>LR</span><span>0.001</span></div>
+    <div class="strat-row"><span>Base model</span><span>ImageNet fresh</span></div>
+    <span class="badge badge-gold">🥇 Overall Best</span>
+  </div>
+  <div class="strat-card strat-b fade-up d2">
+    <div class="strat-label">Strategy B</div>
+    <div class="strat-name">Segmented Only</div>
+    <div class="strat-acc">86.13%</div>
+    <div class="strat-acc-sub">Test accuracy — 3rd overall</div>
+    <div class="strat-row"><span>Val accuracy</span><span>86.42%</span></div>
+    <div class="strat-row"><span>Test loss</span><span>0.4064</span></div>
+    <div class="strat-row"><span>Dataset</span><span>9,325 imgs</span></div>
+    <div class="strat-row"><span>Epochs</span><span>20</span></div>
+    <div class="strat-row"><span>LR</span><span>0.001</span></div>
+    <div class="strat-row"><span>Base model</span><span>ImageNet fresh</span></div>
+    <span class="badge badge-bronze">🥉 3rd Overall</span>
+  </div>
+  <div class="strat-card strat-c fade-up d3">
+    <div class="strat-label">Strategy C</div>
+    <div class="strat-name">Mixed 50/50</div>
+    <div class="strat-acc">87.48%</div>
+    <div class="strat-acc-sub">Test accuracy — 4th overall</div>
+    <div class="strat-row"><span>Val accuracy</span><span>87.14%</span></div>
+    <div class="strat-row"><span>Test loss</span><span>0.3631</span></div>
+    <div class="strat-row"><span>Dataset</span><span>9,746 imgs</span></div>
+    <div class="strat-row"><span>Epochs</span><span>20</span></div>
+    <div class="strat-row"><span>LR</span><span>0.001</span></div>
+    <div class="strat-row"><span>Base model</span><span>ImageNet fresh</span></div>
+    <span class="badge badge-grey">4th Overall</span>
+  </div>
+  <div class="strat-card strat-d fade-up d4">
+    <div class="strat-label">Strategy D</div>
+    <div class="strat-name">Fine-Tuned (A→Seg)</div>
+    <div class="strat-acc">88.42%</div>
+    <div class="strat-acc-sub">Test accuracy — 2nd overall</div>
+    <div class="strat-row"><span>Val accuracy</span><span>87.28%</span></div>
+    <div class="strat-row"><span>Test loss</span><span>0.3688</span></div>
+    <div class="strat-row"><span>Dataset</span><span>9,325 imgs (seg)</span></div>
+    <div class="strat-row"><span>Epochs</span><span>10 fine-tune</span></div>
+    <div class="strat-row"><span>LR</span><span>1e-5</span></div>
+    <div class="strat-row"><span>Base model</span><span>Strategy A (89%)</span></div>
+    <span class="badge badge-silver">🥈 2nd Overall</span>
+  </div>
+</div>
+
+<!-- PIPELINE -->
+<div class="section-label">System Pipeline</div>
+<div class="pipeline-wrap fade-up d2">
+  <div class="pipeline">
+    <div class="pipe-block">
+      <div class="pb-icon">🗂️</div>
+      <div class="pb-title">PlantVillage</div>
+      <div class="pb-sub">10 classes · 18,160 imgs<br>color / segmented</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-block accent-a">
+      <div class="pb-icon">⚙️</div>
+      <div class="pb-title">Preprocessing</div>
+      <div class="pb-sub">224×224 · cap 1000/cls<br>70/15/15 split · SEED=42</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-block accent-a">
+      <div class="pb-icon">📦</div>
+      <div class="pb-title">MobileNetV2</div>
+      <div class="pb-sub">ImageNet pretrained<br>~154 frozen layers</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-block accent-b">
+      <div class="pb-icon">🧩</div>
+      <div class="pb-title">Custom Head</div>
+      <div class="pb-sub">GAP → Dense(128)<br>Dropout(0.3) → Softmax</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-block accent-c">
+      <div class="pb-icon">🏋️</div>
+      <div class="pb-title">Train A/B/C</div>
+      <div class="pb-sub">Adam lr=0.001<br>20 epochs · callbacks</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-block accent-d">
+      <div class="pb-icon">🔧</div>
+      <div class="pb-title">Fine-Tune D</div>
+      <div class="pb-sub">Load A · lr=1e-5<br>10 epochs · 30 layers</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-block accent-red">
+      <div class="pb-icon">🔥</div>
+      <div class="pb-title">Grad-CAM</div>
+      <div class="pb-sub">Heatmap per model<br>4-way comparison</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-block accent-grn">
+      <div class="pb-icon">📐</div>
+      <div class="pb-title">Severity</div>
+      <div class="pb-sub">Infected area ratio<br>Mild / Mod / Severe</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-block accent-out">
+      <div class="pb-icon">📄</div>
+      <div class="pb-title">Paper</div>
+      <div class="pb-sub">Results · Findings<br>Strategy E contribution</div>
+    </div>
+  </div>
+</div>
+
+<!-- GRAD-CAM + SEVERITY -->
+<div class="section-label">Explainability & Severity Estimation — Pending Notebooks</div>
+<div class="tools-grid">
+
+  <!-- GRAD-CAM -->
+  <div class="tool-card tool-gradcam fade-up d1">
+    <div class="tool-header">
+      <div class="tool-icon icon-gradcam">🔥</div>
+      <div>
+        <div class="tool-title">Grad-CAM Visualization</div>
+        <div class="tool-subtitle">Gradient-weighted Class Activation Mapping</div>
+      </div>
+    </div>
+    <div class="tool-body">
+      <strong>What it does:</strong> Grad-CAM opens the model's black box by computing gradients of the predicted class score with respect to the final convolutional feature maps. These gradients are globally averaged to produce channel-wise importance weights, then linearly combined with the feature maps to generate a spatial heatmap — red regions indicate pixels that most strongly influenced the prediction.<br><br>
+      <strong>Why it matters:</strong> Running Grad-CAM on all 4 trained models on the same leaf image produces 4 heatmaps side by side. This visually proves <em>why</em> color-contrast diseases drop under segmentation (the model loses its color focus area) and why texture-dominant diseases improve (attention tightens onto lesion patterns without background scatter).<br><br>
+      <strong>Research value:</strong> Transforms numerical accuracy results into visual proof — a reviewer can see the mechanism, not just the numbers.
+    </div>
+    <div class="tech-chips">
+      <span class="chip chip-red">tf.GradientTape</span>
+      <span class="chip chip-red">Last Conv Layer</span>
+      <span class="chip chip-blue">ReLU + Normalize</span>
+      <span class="chip chip-blue">cv2.applyColorMap</span>
+      <span class="chip chip-grey">COLORMAP_JET</span>
+      <span class="chip chip-grey">4-model comparison</span>
+    </div>
+
+    <!-- Animated heatmap grid demo -->
+    <div class="gradcam-demo" id="gcDemo">
+      <div class="demo-item">
+        <div class="demo-label">Original</div>
+        <div class="demo-grid" id="gc-orig"></div>
+      </div>
+      <div class="demo-item">
+        <div class="demo-label">Strategy A</div>
+        <div class="demo-grid" id="gc-a"></div>
+      </div>
+      <div class="demo-item">
+        <div class="demo-label">Strategy B</div>
+        <div class="demo-grid" id="gc-b"></div>
+      </div>
+    </div>
+    <div style="font-size:9.5px; color:#9aafC0; margin-top:6px; font-style:italic;">
+      Illustrative heatmap — red = high model attention, blue = ignored region
+    </div>
+  </div>
+
+  <!-- SEVERITY -->
+  <div class="tool-card tool-severity fade-up d2">
+    <div class="tool-header">
+      <div class="tool-icon icon-severity">📐</div>
+      <div>
+        <div class="tool-title">Disease Severity Estimation</div>
+        <div class="tool-subtitle">Pixel-ratio analysis on segmented images</div>
+      </div>
+    </div>
+    <div class="tool-body">
+      <strong>What it does:</strong> Using the segmented images (black background, leaf only), the system isolates the leaf area by counting non-black pixels, then detects diseased pixels by applying HSV color thresholding tuned per disease type. The ratio of diseased pixels to total leaf pixels yields a continuous severity score without any manual labeling.<br><br>
+      <strong>Formula:</strong> <code style="background:#efffef; padding:2px 6px; border-radius:4px; font-size:11px; color:#1a6a3a;">severity = diseased_pixels / total_leaf_pixels</code><br><br>
+      <strong>Why it matters:</strong> PlantVillage has no severity labels — this method creates a new data dimension from existing images. A farmer's system that says <em>"Early Blight — Moderate (28% leaf affected)"</em> is far more actionable than one that just says "Early Blight." This is an <strong>original research contribution</strong> — no existing benchmark defines severity this way for tomato diseases.
+    </div>
+    <div class="tech-chips">
+      <span class="chip chip-grn">cv2.inRange (HSV)</span>
+      <span class="chip chip-grn">Pixel counting</span>
+      <span class="chip chip-blue">NumPy masking</span>
+      <span class="chip chip-blue">Segmented images</span>
+      <span class="chip chip-grey">No manual labels</span>
+      <span class="chip chip-grey">Regression output</span>
+    </div>
+
+    <!-- Animated severity bars -->
+    <div class="severity-demo">
+      <div class="sev-row">
+        <div class="sev-name">Bacterial spot</div>
+        <div class="sev-bar-wrap">
+          <div class="sev-bar" style="width:14%; background:linear-gradient(90deg,#4abe7a,#2a9e5a); animation-delay:0.1s;"></div>
+        </div>
+        <div class="sev-pct" style="color:#1a7a40;">14%</div>
+        <span class="sev-tag tag-mild">Mild</span>
+      </div>
+      <div class="sev-row">
+        <div class="sev-name">Early blight</div>
+        <div class="sev-bar-wrap">
+          <div class="sev-bar" style="width:31%; background:linear-gradient(90deg,#f0c040,#d09010); animation-delay:0.2s;"></div>
+        </div>
+        <div class="sev-pct" style="color:#a06000;">31%</div>
+        <span class="sev-tag tag-mod">Moderate</span>
+      </div>
+      <div class="sev-row">
+        <div class="sev-name">Late blight</div>
+        <div class="sev-bar-wrap">
+          <div class="sev-bar" style="width:58%; background:linear-gradient(90deg,#e06040,#c03020); animation-delay:0.3s;"></div>
+        </div>
+        <div class="sev-pct" style="color:#c03030;">58%</div>
+        <span class="sev-tag tag-sev">Severe</span>
+      </div>
+      <div class="sev-row">
+        <div class="sev-name">Spider mites</div>
+        <div class="sev-bar-wrap">
+          <div class="sev-bar" style="width:22%; background:linear-gradient(90deg,#f0c040,#d09010); animation-delay:0.4s;"></div>
+        </div>
+        <div class="sev-pct" style="color:#a06000;">22%</div>
+        <span class="sev-tag tag-mod">Moderate</span>
+      </div>
+    </div>
+    <div style="font-size:9.5px; color:#9aafC0; margin-top:8px; font-style:italic;">
+      Illustrative severity scores — actual values computed from segmented masks
+    </div>
+  </div>
+
+</div>
+
+<!-- PER-CLASS TABLE -->
+<div class="section-label">Per-Class Accuracy — All 4 Strategies</div>
+<div class="table-wrap fade-up d2">
+  <table>
+    <thead>
+      <tr>
+        <th style="text-align:left; width:155px;">Disease Class</th>
+        <th style="color:#93b8e8;">A Color</th>
+        <th style="color:#e8b88a;">B Segmented</th>
+        <th style="color:#7acf9e;">C Mixed</th>
+        <th style="color:#b89adf;">D Fine-tuned</th>
+        <th style="color:#a0b8c8;">D−A</th>
+        <th style="color:#a0b8c8;">D−B</th>
+        <th style="color:#a0b8c8;">D−C</th>
+        <th>Best</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Bacterial spot</td>
+        <td class="best-a">99.3%</td><td class="cb">78.7%</td><td class="cc">90.0%</td><td class="cd">88.7%</td>
+        <td class="dn">−10.6%</td><td class="dp">+10.0%</td><td class="dn">−1.3%</td>
+        <td><span class="wp wp-a">A</span></td>
+      </tr>
+      <tr>
+        <td>Early blight</td>
+        <td class="best-a">82.0%</td><td class="cb">74.7%</td><td class="cc cell-danger">62.0%</td><td class="cd">74.7%</td>
+        <td class="dn">−7.3%</td><td class="dz">±0.0%</td><td class="dp">+12.7%</td>
+        <td><span class="wp wp-a">A</span></td>
+      </tr>
+      <tr>
+        <td>Late blight</td>
+        <td class="ca">89.3%</td><td class="cb">92.0%</td><td class="best-c">94.7%</td><td class="cd">91.3%</td>
+        <td class="dp">+2.0%</td><td class="dn">−0.7%</td><td class="dn">−3.4%</td>
+        <td><span class="wp wp-c">C</span></td>
+      </tr>
+      <tr>
+        <td>Leaf Mold</td>
+        <td class="ca">92.3%</td><td class="cb">79.0%</td><td class="cc">92.0%</td><td class="best-d">92.3%</td>
+        <td class="dz">±0.0%</td><td class="dp">+13.3%</td><td class="dp">+0.3%</td>
+        <td><span class="wp wp-d">D</span></td>
+      </tr>
+      <tr>
+        <td>Septoria leaf spot</td>
+        <td class="ca">85.3%</td><td class="best-b">90.7%</td><td class="cc">89.3%</td><td class="cd">89.3%</td>
+        <td class="dp">+4.0%</td><td class="dn">−1.4%</td><td class="dz">±0.0%</td>
+        <td><span class="wp wp-b">B</span></td>
+      </tr>
+      <tr>
+        <td>Spider mites</td>
+        <td class="ca cell-warn">77.3%</td><td class="best-b">89.3%</td><td class="cc">88.7%</td><td class="cd">85.3%</td>
+        <td class="dp">+8.0%</td><td class="dn">−4.0%</td><td class="dn">−3.4%</td>
+        <td><span class="wp wp-b">B</span></td>
+      </tr>
+      <tr>
+        <td>Target Spot</td>
+        <td class="ca">86.0%</td><td class="cb">85.3%</td><td class="best-c">87.3%</td><td class="cd cell-danger">76.7%</td>
+        <td class="dn">−9.3%</td><td class="dn">−8.6%</td><td class="dn">−10.6%</td>
+        <td><span class="wp wp-c">C</span></td>
+      </tr>
+      <tr>
+        <td>Yellow Leaf Curl</td>
+        <td class="ca">95.3%</td><td class="best-b">96.7%</td><td class="cc">90.7%</td><td class="cd">96.0%</td>
+        <td class="dp">+0.7%</td><td class="dn">−0.7%</td><td class="dp">+5.3%</td>
+        <td><span class="wp wp-b">B</span></td>
+      </tr>
+      <tr>
+        <td>Mosaic virus</td>
+        <td class="ca">91.1%</td><td class="cb">82.1%</td><td class="cc">93.8%</td><td class="best-d">96.4%</td>
+        <td class="dp">+5.3%</td><td class="dp">+14.3%</td><td class="dp">+2.6%</td>
+        <td><span class="wp wp-d">D</span></td>
+      </tr>
+      <tr>
+        <td>Healthy</td>
+        <td class="ca">94.0%</td><td class="cb">90.0%</td><td class="cc">88.0%</td><td class="best-d">98.7%</td>
+        <td class="dp">+4.7%</td><td class="dp">+8.7%</td><td class="dp">+10.7%</td>
+        <td><span class="wp wp-d">D</span></td>
+      </tr>
+    </tbody>
+    <tfoot>
+      <tr>
+        <td>OVERALL</td>
+        <td>89.06%</td><td>86.13%</td><td>87.48%</td><td>88.42%</td>
+        <td>−0.64%</td><td>+2.29%</td><td>+0.94%</td><td></td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <div class="win-strip">
+    <div class="win-box win-box-a">
+      <div class="win-count">2</div>
+      <div class="win-label">Strategy A wins<br>Bacterial spot · Early blight</div>
+    </div>
+    <div class="win-box win-box-b">
+      <div class="win-count">3</div>
+      <div class="win-label">Strategy B wins<br>Septoria · Spider mites · Yellow Curl</div>
+    </div>
+    <div class="win-box win-box-c">
+      <div class="win-count">2</div>
+      <div class="win-label">Strategy C wins<br>Late blight · Target Spot</div>
+    </div>
+    <div class="win-box win-box-d">
+      <div class="win-count">3</div>
+      <div class="win-label">Strategy D wins<br>Leaf Mold · Mosaic virus · Healthy</div>
+    </div>
+  </div>
+</div>
+
+<!-- OBSERVATIONS -->
+<div class="section-label">Key Research Observations — All 4 Strategies</div>
+<div class="obs-grid">
+
+  <div class="obs-card fade-up d1">
+    <span class="obs-strat-label obs-a">Strategy A — Color only · 89.06%</span>
+    <ul class="obs-list">
+      <li class="ok">Highest overall accuracy — color context is the strongest signal for MobileNetV2</li>
+      <li class="ok">Bacterial spot near-perfect at 99.3% — water-soaked lesion color contrast is primary discriminator</li>
+      <li class="ok">Healthy leaf at 94% — vibrant green color is a strong healthy indicator</li>
+      <li class="warn">Spider mites weakest at 77.3% — tiny damage patterns obscured by background color noise</li>
+      <li class="info">Color-dominant diseases consistently prefer this strategy across all experiments</li>
+    </ul>
+    <div class="obs-summary">MobileNetV2 pretrained on color ImageNet naturally leverages color-contrast signals — background context carries disease information, not just noise</div>
+  </div>
+
+  <div class="obs-card fade-up d2">
+    <span class="obs-strat-label obs-b">Strategy B — Segmented only · 86.13%</span>
+    <ul class="obs-list">
+      <li class="ok">Spider mites jumped from 77.3% → 89.3% (+12%) — texture patterns clearer without background</li>
+      <li class="ok">Septoria improved 85.3% → 90.7% (+5.4%) — lesion shape more visible on clean leaf</li>
+      <li class="ok">Yellow Curl highest at 96.7% — curl shape is a pure structural feature</li>
+      <li class="bad">Bacterial spot collapsed from 99.3% → 78.7% (−20.6%) — loses color-contrast signal</li>
+      <li class="bad">Leaf Mold dropped 92.3% → 79.0% (−13.3%) — yellow-green difference was the key discriminator</li>
+    </ul>
+    <div class="obs-summary">Background removal is a double-edged sword — helps pattern-based diseases but destroys color-based disease signals</div>
+  </div>
+
+  <div class="obs-card fade-up d3">
+    <span class="obs-strat-label obs-c">Strategy C — Mixed 50/50 · 87.48%</span>
+    <ul class="obs-list">
+      <li class="ok">Late blight best result at 94.7% — improves consistently across A→B→C</li>
+      <li class="ok">Mosaic virus recovered to 93.8% — combining modalities rescues the segmented drop</li>
+      <li class="ok">Target Spot best at 87.3% — responds well to visual variety in training</li>
+      <li class="bad">Early blight collapsed from 82.0% → 62.0% (−20%) — conflicting visual representations confused model</li>
+      <li class="info">Random 50/50 does not achieve best of both worlds — directly motivates Strategy E</li>
+    </ul>
+    <div class="obs-summary">Early blight's 20% collapse is the strongest evidence that class-aware selective mixing (Strategy E) is necessary, not uniform mixing</div>
+  </div>
+
+  <div class="obs-card fade-up d4">
+    <span class="obs-strat-label obs-d">Strategy D — Fine-tuned · 88.42%</span>
+    <ul class="obs-list">
+      <li class="ok">Healthy leaf reached 98.7% — highest single-class result across all 4 strategies</li>
+      <li class="ok">Mosaic virus at 96.4% — D uniquely excels, benefits from cross-domain exposure</li>
+      <li class="ok">Catastrophic forgetting: only −0.64% vs A — 99.3% of original knowledge retained</li>
+      <li class="ok">Epoch 1 started at 82.2% val accuracy — proves color knowledge carried over</li>
+      <li class="warn">Target Spot dropped to 76.7% — worst result for this class across all strategies</li>
+      <li class="bad">Bacterial spot dropped 99.3% → 88.7% (−10.6%) — minor color forgetting occurred</li>
+    </ul>
+    <div class="obs-summary">Fine-tuning at lr=1e-5 successfully adapts to segmented domain with minimal forgetting — per-class trade-offs remain, validating Strategy E</div>
+  </div>
+
+</div>
+
+<!-- STRATEGY E -->
+<div class="section-label">Strategy E — Class-Aware Selective Mixing (Original Contribution · Pending)</div>
+<div class="strat-e-box fade-up d2">
+  <div class="strat-e-title">★  Data-Driven Per-Class Modality Assignment — Derived from A vs B Experimental Results</div>
+  <div class="e-grid">
+    <div>
+      <div class="e-col-title">Color images (1000/class) — color-dominant</div>
+      <div class="e-item"><span class="e-dot e-dot-color"></span>Bacterial spot — A wins by +20.6% over B</div>
+      <div class="e-item"><span class="e-dot e-dot-color"></span>Early blight — A wins; C collapsed to 62%</div>
+      <div class="e-item"><span class="e-dot e-dot-color"></span>Leaf Mold — A wins by +13.3% over B</div>
+      <div class="e-item"><span class="e-dot e-dot-color"></span>Healthy — A=94%, color clearly dominant</div>
+    </div>
+    <div>
+      <div class="e-col-title">Segmented / Mixed (1000/class) — texture-dominant</div>
+      <div class="e-item"><span class="e-dot e-dot-seg"></span>Spider mites — B wins by +12.0% over A</div>
+      <div class="e-item"><span class="e-dot e-dot-seg"></span>Septoria — B wins by +5.4% over A</div>
+      <div class="e-item"><span class="e-dot e-dot-seg"></span>Yellow Leaf Curl — B=96.7% consistently best</div>
+      <div class="e-item"><span class="e-dot e-dot-mix"></span>Late blight — C=94.7% best; both modalities help</div>
+      <div class="e-item"><span class="e-dot e-dot-mix"></span>Target Spot — C=87.3% best</div>
+      <div class="e-item"><span class="e-dot e-dot-mix"></span>Mosaic virus — D=96.4% (multi-domain exposure)</div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer fade-up d5">
+  <div class="footer-left">TensorFlow 2.10 · Python 3.11 · MobileNetV2 · PlantVillage · VSCode · Windows</div>
+  <div class="footer-right">D:\Development\8th Sem Project\TomatoClassification · CS183 · 2024–25</div>
+</div>
+
+</div>
+
+<script>
+/* ── Grad-CAM demo heatmaps ─────────────────────────── */
+function makeHeatGrid(id, pattern) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  for (let i = 0; i < 36; i++) {
+    const c = document.createElement('div');
+    c.className = 'demo-cell';
+    c.style.background = pattern(i);
+    el.appendChild(c);
+  }
+}
+
+// Original — green leaf
+makeHeatGrid('gc-orig', i => {
+  const row = Math.floor(i/6), col = i%6;
+  const g = 80 + Math.random()*40;
+  return `rgb(${20+Math.random()*20},${g+40},${20+Math.random()*20})`;
+});
+
+// Strategy A — tight focus on top-left disease area (color contrast)
+makeHeatGrid('gc-a', i => {
+  const row = Math.floor(i/6), col = i%6;
+  const hot = (row < 3 && col < 3);
+  const warm = (row < 4 && col < 4 && !hot);
+  if (hot) return `rgb(${200+Math.random()*40},${30+Math.random()*20},${10+Math.random()*10})`;
+  if (warm) return `rgb(${220+Math.random()*20},${100+Math.random()*40},${20+Math.random()*10})`;
+  return `rgb(${20+Math.random()*20},${60+Math.random()*30},${180+Math.random()*40})`;
+});
+
+// Strategy B — scattered attention (loses color signal)
+makeHeatGrid('gc-b', i => {
+  const r = Math.random();
+  if (r > 0.75) return `rgb(${180+Math.random()*40},${60+Math.random()*30},${20+Math.random()*10})`;
+  if (r > 0.5)  return `rgb(${220+Math.random()*20},${140+Math.random()*40},${20+Math.random()*10})`;
+  return `rgb(${30+Math.random()*30},${80+Math.random()*40},${180+Math.random()*40})`;
+});
+
+/* ── Animate severity bars on scroll ──────────────────── */
+const bars = document.querySelectorAll('.sev-bar');
+bars.forEach((bar, i) => {
+  bar.style.width = '0%';
+  const targets = ['14%','31%','58%','22%'];
+  setTimeout(() => {
+    bar.style.transition = 'width 1s ease';
+    bar.style.width = targets[i] || '20%';
+  }, 600 + i * 150);
+});
+
+/* ── Fade-up on scroll ────────────────────────────────── */
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.style.opacity = '1';
+      e.target.style.transform = 'translateY(0)';
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.fade-up').forEach(el => {
+  el.style.opacity = '0';
+  el.style.transform = 'translateY(14px)';
+  el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+  observer.observe(el);
+});
+
+/* ── Strategy card hover count-up ────────────────────── */
+document.querySelectorAll('.strat-acc').forEach(el => {
+  const target = parseFloat(el.textContent);
+  let start = target - 4;
+  const step = () => {
+    if (start < target) {
+      start = Math.min(start + 0.3, target);
+      el.textContent = start.toFixed(2) + '%';
+      requestAnimationFrame(step);
+    }
+  };
+  el.closest('.strat-card').addEventListener('mouseenter', step);
+});
+</script>
+</body>
+</html>
