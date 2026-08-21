@@ -19,7 +19,72 @@ Running log of actual results (metrics, files produced, dates) from work done on
 
 ## Entries
 
-## 2026-08-22 — Issue 2: PlantDoc cross-dataset validation, all three model generations
+## 2026-08-22 — Issue 2: definitive PlantDoc evaluation (paper-grade, supersedes earlier run)
+
+- Script: `scripts/plantdoc_final_evaluation.py` (supersedes notebook 08 and the earlier
+  `scripts/eval_plantdoc.py` ablation, whose JSON has been removed to avoid two competing
+  sources of truth)
+- **Paper-ready report: `outputs/cross_dataset_validation/PLANTDOC_REPORT.md`** — six numbered
+  tables plus three figures, formatted for direct use in the paper.
+- Data: PlantDoc tomato subset, train+test pooled, **731 images / 8 classes**, chance 12.5%.
+  Spider Mites and Target Spot have no PlantDoc equivalent.
+- Each model evaluated with the scaling it was trained with (notebook 08 mismatched these; worth
+  ~1 point).
+
+Re-measurement reproduces the paper's published Section V numbers **exactly** (A 22.98%,
+B 24.21%, C 24.49%, D 21.61%, E 24.35%), confirming the measurement chain. Inference is
+deterministic, so re-running cannot and did not change the result.
+
+### Lab vs field, Issue-1 generation models
+
+| Strategy | PlantVillage | PlantDoc | Gap | Top-3 field |
+|---|---|---|---|---|
+| A — color | 89.21% | 21.20% | -68.0 | 51.30% |
+| B — segmented | 88.42% | 25.72% | -62.7 | 53.76% |
+| C — mixed | 87.42% | 25.31% | -62.1 | 56.77% |
+| D — fine-tuned | 90.92% | 22.85% | -68.1 | 57.05% |
+| E — selective | 93.71% | 23.67% | -70.0 | 54.58% |
+
+Strategy E has the **largest** generalization gap of the five, and on field images all five are
+within ~4 points — indistinguishable. Class-aware routing is a PlantVillage-specific gain.
+
+### New findings from this run
+
+**Top-3 accuracy is 51-57% against top-1 of 21-26%.** The representation retains usable signal
+that the decision boundary fails to rank. This is diagnostic: the models are not blind to field
+images, they are biased — which is why test-time corrections help only marginally (+2 to +4
+points from TTA, centre-cropping, restriction to present classes and prior correction, all
+tested and exhausted).
+
+**Predictions collapse onto three classes.** For Strategy E, 572 of 731 predictions (78%) are
+Early Blight, Late Blight or Septoria. Mosaic Virus receives zero predictions from any model.
+Prediction onto the two absent classes is 0.1-3.0%, ruling out hallucination of missing
+categories.
+
+**Failure is disease-specific, not uniform.** Late Blight (38.7-61.3%), Septoria (23.0-50.7%) and
+Early Blight (26.5-63.9%) retain partial signal across strategies; Bacterial Spot (0.0-7.5%),
+Leaf Mold (3.3-5.5%), Yellow Leaf Curl (0.0-5.3%) and Mosaic Virus (0.0% everywhere) do not.
+
+**Label smoothing improved calibration, not accuracy.** Mean confidence fell from ~85% (paper
+generation) to 51-64%. A 51%-confident prediction can be escalated to a human; an 85%-confident
+wrong one cannot.
+
+### Figures produced
+
+`fig_internal_vs_plantdoc.png`, `fig_plantdoc_per_class.png`, `fig_plantdoc_confusion_E.png`.
+
+### Issue 2 status: MEASURED — no remedy found
+
+Confirmed across two model generations and both scalings. Neither the Issue 1 leak fix nor the
+Issue 4 preprocessing fix moves field accuracy. The "diagnose then fix" narrative proposed in
+`PAPER_REVIEW_NOTES.md` is not supported by the data; the paper should report the negative result
+with the per-class breakdown, the top-3 diagnostic and the calibration gain as the substantive
+contributions. Untested lever: background randomisation using the segmentation masks, plus
+aggressive augmentation (requires retraining).
+
+---
+
+## 2026-08-22 — Issue 2: PlantDoc cross-dataset validation, all three model generations (superseded)
 
 - Script: `scripts/eval_plantdoc.py` (new; portable, and fixes a bug in notebook 08 — see below)
 - Data: `validation/PlantDoc-Dataset`, train+test pooled = **731 tomato images**, 8 of the 10
