@@ -1,0 +1,19 @@
+{
+  "strategy": "A",
+  "source_split": "val",
+  "domain": "color",
+  "preproc": "rescale",
+  "overall_accuracy": 0.9127948534667619,
+  "per_class_accuracy": {
+    "Tomato___Bacterial_spot": 0.9666666666666667,
+    "Tomato___Early_blight": 0.7666666666666667,
+    "Tomato___Late_blight": 0.9266666666666666,
+    "Tomato___Leaf_Mold": 0.9440559440559441,
+    "Tomato___Septoria_leaf_spot": 0.84,
+    "Tomato___Spider_mites Two-spotted_spider_mite": 0.94,
+    "Tomato___Target_Spot": 0.9333333333333333,
+    "Tomato___Tomato_Yellow_Leaf_Curl_Virus": 0.96,
+    "Tomato___Tomato_mosaic_virus": 0.9107142857142857,
+    "Tomato___healthy": 0.94
+  }
+}
