@@ -1,0 +1,98 @@
+{
+  "source_split": "val",
+  "preproc": "rescale",
+  "routing": {
+    "Tomato___Bacterial_spot": "color",
+    "Tomato___Early_blight": "color",
+    "Tomato___Late_blight": "color",
+    "Tomato___Leaf_Mold": "color",
+    "Tomato___Septoria_leaf_spot": "segmented",
+    "Tomato___Spider_mites Two-spotted_spider_mite": "color",
+    "Tomato___Target_Spot": "color",
+    "Tomato___Tomato_Yellow_Leaf_Curl_Virus": "segmented",
+    "Tomato___Tomato_mosaic_virus": "segmented",
+    "Tomato___healthy": "mixed"
+  },
+  "table": [
+    {
+      "class": "Tomato___Bacterial_spot",
+      "acc_A": 0.9666666666666667,
+      "acc_B": 0.9133333333333333,
+      "acc_C": 0.9266666666666666,
+      "winner": "A",
+      "domain": "color"
+    },
+    {
+      "class": "Tomato___Early_blight",
+      "acc_A": 0.7666666666666667,
+      "acc_B": 0.68,
+      "acc_C": 0.7,
+      "winner": "A",
+      "domain": "color"
+    },
+    {
+      "class": "Tomato___Late_blight",
+      "acc_A": 0.9266666666666666,
+      "acc_B": 0.88,
+      "acc_C": 0.86,
+      "winner": "A",
+      "domain": "color"
+    },
+    {
+      "class": "Tomato___Leaf_Mold",
+      "acc_A": 0.9440559440559441,
+      "acc_B": 0.9020979020979021,
+      "acc_C": 0.9300699300699301,
+      "winner": "A",
+      "domain": "color"
+    },
+    {
+      "class": "Tomato___Septoria_leaf_spot",
+      "acc_A": 0.84,
+      "acc_B": 0.92,
+      "acc_C": 0.8466666666666667,
+      "winner": "B",
+      "domain": "segmented"
+    },
+    {
+      "class": "Tomato___Spider_mites Two-spotted_spider_mite",
+      "acc_A": 0.94,
+      "acc_B": 0.9,
+      "acc_C": 0.9133333333333333,
+      "winner": "A",
+      "domain": "color"
+    },
+    {
+      "class": "Tomato___Target_Spot",
+      "acc_A": 0.9333333333333333,
+      "acc_B": 0.78,
+      "acc_C": 0.7866666666666666,
+      "winner": "A",
+      "domain": "color"
+    },
+    {
+      "class": "Tomato___Tomato_Yellow_Leaf_Curl_Virus",
+      "acc_A": 0.96,
+      "acc_B": 0.9733333333333334,
+      "acc_C": 0.9466666666666667,
+      "winner": "B",
+      "domain": "segmented"
+    },
+    {
+      "class": "Tomato___Tomato_mosaic_virus",
+      "acc_A": 0.9107142857142857,
+      "acc_B": 0.9642857142857143,
+      "acc_C": 0.8928571428571429,
+      "winner": "B",
+      "domain": "segmented"
+    },
+    {
+      "class": "Tomato___healthy",
+      "acc_A": 0.94,
+      "acc_B": 0.94,
+      "acc_C": 0.9533333333333334,
+      "winner": "C",
+      "domain": "mixed"
+    }
+  ]
+}

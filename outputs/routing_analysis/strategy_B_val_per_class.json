@@ -1,0 +1,19 @@
+{
+  "strategy": "B",
+  "source_split": "val",
+  "domain": "segmented",
+  "preproc": "mobilenet",
+  "overall_accuracy": 0.8906361686919227,
+  "per_class_accuracy": {
+    "Tomato___Bacterial_spot": 0.9133333333333333,
+    "Tomato___Early_blight": 0.6266666666666667,
+    "Tomato___Late_blight": 0.9533333333333334,
+    "Tomato___Leaf_Mold": 0.9300699300699301,
+    "Tomato___Septoria_leaf_spot": 0.9066666666666666,
+    "Tomato___Spider_mites Two-spotted_spider_mite": 0.9533333333333334,
+    "Tomato___Target_Spot": 0.8333333333333334,
+    "Tomato___Tomato_Yellow_Leaf_Curl_Virus": 0.94,
+    "Tomato___Tomato_mosaic_virus": 0.9464285714285714,
+    "Tomato___healthy": 0.94
+  }
+}

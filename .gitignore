@@ -26,3 +26,12 @@ __pycache__/
 # Models
 # If you want to track models, uncomment the next line and consider using Git LFS
 # models/*.h5
+
+# Raw dataset archive (re-downloadable, 2.1GB)
+archive.zip
+
+# Obsidian editor config
+.obsidian/
+
+# Retrained models from scripts/pipeline.py (263MB, reproducible)
+models/*.keras
