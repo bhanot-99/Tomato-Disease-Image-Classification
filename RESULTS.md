@@ -42,7 +42,7 @@ published 93.88% that was leak-inflated. The contribution stands. Strategy D is 
 clearly benefits from correct preprocessing (+3.57 over pass 1); A and C are unchanged within
 noise, which is expected — the internal test set shares whatever scaling training used, so
 `preprocess_input` cannot show its value here. Its payoff should appear on cross-dataset
-PlantDoc (notebook 08), which has not yet been re-run.
+evaluation against field imagery, which has not yet been re-run.
 
 ### IMPORTANT CAVEAT — the routing table is not stable
 
@@ -111,7 +111,7 @@ Routing is derived from validation data only; the test split is evaluated once, 
 strategies, at the end. Still open from PAPER_REVIEW_NOTES.md: notebook 05's in-file
 `CLASS_ROUTING` constant is still the legacy test-derived table and the notebooks still carry
 Windows paths, so the notebooks do not yet reproduce this result — `scripts/pipeline.py` is the
-authoritative path. Issue 2 (PlantDoc) needs notebook 08 re-run against these new models.
+authoritative path.
 
 ---
 

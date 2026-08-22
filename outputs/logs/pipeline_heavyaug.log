@@ -1,0 +1,57 @@
+2026-08-22 16:15:37.176811: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:479] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2026-08-22 16:15:37.201732: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:10575] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+2026-08-22 16:15:37.201814: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1442] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+2026-08-22 16:15:37.219267: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2026-08-22 16:15:38.239209: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT
+2026-08-22 16:15:40.018692: I external/local_xla/xla/stream_executor/cuda/cuda_executor.cc:998] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-08-22 16:15:40.073200: I external/local_xla/xla/stream_executor/cuda/cuda_executor.cc:998] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-08-22 16:15:40.077008: I external/local_xla/xla/stream_executor/cuda/cuda_executor.cc:998] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+TensorFlow 2.16.2 | GPUs: [PhysicalDevice(name='/physical_device:GPU:0', device_type='GPU')]
+
+======================================================================
+Training strategy_A  <- /home/bhanot/Desktop/tomato/dataset/processed  (aug=heavy, epochs=40)
+======================================================================
+Found 6527 images belonging to 10 classes.
+Found 1399 images belonging to 10 classes.
+2026-08-22 16:15:40.202988: I external/local_xla/xla/stream_executor/cuda/cuda_executor.cc:998] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-08-22 16:15:40.206389: I external/local_xla/xla/stream_executor/cuda/cuda_executor.cc:998] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-08-22 16:15:40.209269: I external/local_xla/xla/stream_executor/cuda/cuda_executor.cc:998] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-08-22 16:15:40.388851: I external/local_xla/xla/stream_executor/cuda/cuda_executor.cc:998] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-08-22 16:15:40.391969: I external/local_xla/xla/stream_executor/cuda/cuda_executor.cc:998] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-08-22 16:15:40.395089: I external/local_xla/xla/stream_executor/cuda/cuda_executor.cc:998] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero. See more at https://github.com/torvalds/linux/blob/v6.0/Documentation/ABI/testing/sysfs-bus-pci#L344-L355
+2026-08-22 16:15:40.398454: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1928] Created device /job:localhost/replica:0/task:0/device:GPU:0 with 2154 MB memory:  -> device: 0, name: NVIDIA GeForce RTX 3050 Laptop GPU, pci bus id: 0000:01:00.0, compute capability: 8.6
+Epoch 1/40
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1787395547.279470   15772 service.cc:145] XLA service 0x7dd8c00019f0 initialized for platform CUDA (this does not guarantee that XLA will be used). Devices:
+I0000 00:00:1787395547.279545   15772 service.cc:153]   StreamExecutor device (0): NVIDIA GeForce RTX 3050 Laptop GPU, Compute Capability 8.6
+2026-08-22 16:15:47.393645: I tensorflow/compiler/mlir/tensorflow/utils/dump_mlir_util.cc:268] disabling MLIR crash reproducer, set env var `MLIR_CRASH_REPRODUCER_DIRECTORY` to enable.
+2026-08-22 16:15:48.036707: I external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:465] Loaded cuDNN version 8907
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1787395549.658032   16210 asm_compiler.cc:369] ptxas warning : Registers are spilled to local memory in function 'triton_gemm_dot_4702', 4 bytes spill stores, 4 bytes spill loads
+
+I0000 00:00:1787395550.119345   16213 asm_compiler.cc:369] ptxas warning : Registers are spilled to local memory in function 'triton_gemm_dot_1709', 244 bytes spill stores, 244 bytes spill loads
+
+I0000 00:00:1787395550.414497   16204 asm_compiler.cc:369] ptxas warning : Registers are spilled to local memory in function 'triton_gemm_dot_1709', 32 bytes spill stores, 32 bytes spill loads
+
+I0000 00:00:1787395559.580443   15772 device_compiler.h:188] Compiled cluster using XLA!  This line is logged at most once for the lifetime of the process.
+I0000 00:00:1787395595.456549   17070 asm_compiler.cc:369] ptxas warning : Registers are spilled to local memory in function 'triton_gemm_dot_1709', 32 bytes spill stores, 32 bytes spill loads
+
+I0000 00:00:1787395596.212364   17071 asm_compiler.cc:369] ptxas warning : Registers are spilled to local memory in function 'triton_gemm_dot_1709', 236 bytes spill stores, 236 bytes spill loads
+
+I0000 00:00:1787395596.979034   17060 asm_compiler.cc:369] ptxas warning : Registers are spilled to local memory in function 'triton_gemm_dot_4702', 4 bytes spill stores, 4 bytes spill loads
+
+I0000 00:00:1787395662.041577   17383 asm_compiler.cc:369] ptxas warning : Registers are spilled to local memory in function 'triton_gemm_dot_1210', 260 bytes spill stores, 260 bytes spill loads
+
+204/204 - 127s - 623ms/step - accuracy: 0.5560 - loss: 1.5337 - val_accuracy: 0.7434 - val_loss: 1.1553 - learning_rate: 0.0010
+Epoch 2/40
+204/204 - 78s - 384ms/step - accuracy: 0.7052 - loss: 1.2246 - val_accuracy: 0.8020 - val_loss: 1.0209 - learning_rate: 0.0010
+Epoch 3/40
+204/204 - 91s - 446ms/step - accuracy: 0.7308 - loss: 1.1622 - val_accuracy: 0.7806 - val_loss: 1.0265 - learning_rate: 0.0010
+Epoch 4/40
+204/204 - 85s - 416ms/step - accuracy: 0.7535 - loss: 1.1244 - val_accuracy: 0.7856 - val_loss: 1.0196 - learning_rate: 0.0010
+Epoch 5/40
+204/204 - 93s - 458ms/step - accuracy: 0.7628 - loss: 1.1075 - val_accuracy: 0.7949 - val_loss: 1.0169 - learning_rate: 0.0010
+Epoch 6/40
+204/204 - 100s - 490ms/step - accuracy: 0.7662 - loss: 1.0862 - val_accuracy: 0.8427 - val_loss: 0.9380 - learning_rate: 0.0010
+Epoch 7/40

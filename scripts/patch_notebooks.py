@@ -242,10 +242,6 @@ def main():
     print("       (Penalises overconfidence, improves domain generalisation)")
     print()
     print("  ⚠️  NOTE: You must RETRAIN all models for changes to take effect.")
-    print("  📌 Also update 08_cross_dataset_validation_plantdoc.ipynb Cell 5:")
-    print("       Remove `arr = arr / 255.0`")
-    print("       Add    `from tensorflow.keras.applications.mobilenet_v2 import preprocess_input`")
-    print("              `arr = preprocess_input(arr)  # maps [0,255] → [-1,1]`")
     print("=" * 60)
 
 

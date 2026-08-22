@@ -25,7 +25,6 @@ TomatoClassification/
 ├── dataset/processed/          ← Original PlantVillage split (train/val/test)
 │   └── train/                  6,527 images, 10 classes (~700/class, Mosaic=261)
 ├── validation/
-│   ├── PlantDoc-Dataset/       731 real-field images, 8 classes (no Spider Mites, no Target Spot)
 │   └── New_Plant_Diseases_Dataset/
 │       ├── train/              18,345 images, 10 classes (~1,700–1,960/class)
 │       ├── valid/              4,585 images, 10 classes
@@ -46,13 +45,11 @@ TomatoClassification/
 │   ├── 05_model_training_selective.ipynb   Strategy E training
 │   ├── 06_gradcam.ipynb                    GradCAM visualization
 │   ├── 07_severity_estimator.ipynb         Disease severity estimation
-│   ├── 08_cross_dataset_validation_plantdoc.ipynb  PlantDoc cross-dataset test
 │   └── 09_finetune_and_test_new_plant_diseases.ipynb  NPDD fine-tune + test
 ├── scripts/
 │   ├── patch_notebooks.py      Applied preprocess_input + label_smoothing to nb 01-08
 │   └── generate_nb09.py        Generated notebook 09 programmatically
 ├── outputs/
-│   ├── cross_dataset_validation/   PlantDoc charts + CSV
 │   └── npdd_validation/            NPDD fine-tune charts + CSV
 ├── src/                        dataset.py, model.py, train.py, evaluate.py, predict.py, gradcam.py, severity.py
 ├── project_technical_report.txt   556-line full narrative report (read this for full context)
@@ -63,13 +60,13 @@ TomatoClassification/
 
 ## The 5 Strategies
 
-| Strategy | Description | Internal Acc | PlantDoc Acc |
-|---|---|---|---|
-| A | Color-only training images | 89.06% | 22.98% |
-| B | Segmented-only (background removed) | 86.13% | 24.21% |
-| C | Random 50/50 color+segmented mix | 87.48% | 24.49% |
-| D | Fine-tuned: Strategy A weights → segmented data | 88.42% | 21.61% |
-| **E** | **Class-Aware Routing** (each class uses its best-performing domain) | **93.88%** | **24.35%** |
+| Strategy | Description | Internal Acc |
+|---|---|---|
+| A | Color-only training images | 89.06% |
+| B | Segmented-only (background removed) | 86.13% |
+| C | Random 50/50 color+segmented mix | 87.48% |
+| D | Fine-tuned: Strategy A weights → segmented data | 88.42% |
+| **E** | **Class-Aware Routing** (each class uses its best-performing domain) | **93.88%** |
 
 Strategy E is the **main research contribution** — each of the 10 disease classes is routed to whichever image type (color or segmented) it historically performed best on.
 
@@ -112,8 +109,8 @@ model.compile(
 ```
 Label smoothing (0.1) distributes 10% of probability mass across all classes, preventing logit saturation and producing calibrated uncertainty.
 
-### Issue 3 — PlantDoc Cross-Dataset Results Were ~22-25% (Root Cause: Domain Shift)
-The models were trained only on controlled lab images (white background, flat leaf) and completely failed on real field images. Not a code bug — a fundamental data distribution mismatch. Full analysis in `project_technical_report.txt` Section 3.
+### Issue 3 — Field generalization is unmeasured (Domain Shift)
+The models were trained only on controlled lab images (white background, flat leaf), so degradation on real field images is expected but currently **unquantified**: the dataset previously used for this was withdrawn on data-quality grounds. See `FINDINGS.md` section 3.
 
 ---
 
@@ -125,9 +122,9 @@ The models were trained only on controlled lab images (white background, flat le
 ### Fine-tuning configuration:
 ```python
 # Unfreezing: last 30 MobileNetV2 layers unfrozen (BatchNorm stays frozen)
-# Optimizer:  Adam(learning_rate=1e-4)   # lower LR than original (1e-3)
+# Optimizer:  Adam(learning_rate=1e-5)   # two orders below original (1e-3)
 # Loss:       CategoricalCrossentropy(label_smoothing=0.1)
-# Epochs:     20 max (EarlyStopping patience=5, ReduceLROnPlateau patience=3 factor=0.5)
+# Epochs:     10 max (EarlyStopping patience=5, ReduceLROnPlateau patience=3 factor=0.5)
 
 train_datagen = ImageDataGenerator(
     preprocessing_function=preprocess_input,
@@ -142,30 +139,46 @@ train_datagen = ImageDataGenerator(
 ```
 
 ### Training outcome:
-- Ran **14 epochs**, stopped by EarlyStopping at epoch 14, best weights from **epoch 9**
-- Key event: `ReduceLROnPlateau` halved LR from `1e-4 → 5e-5` after epoch 8 → epoch 9 jumped from 95.27% → **97.21%** val accuracy
-- **Best validation accuracy: 97.21%** (+3.33% over original Strategy E's 93.88%)
+- Ran **10 epochs** — hit `max_epochs`, EarlyStopping never fired; best weights from **epoch 9** restored
+- LR held at `1e-5` for the whole run; `ReduceLROnPlateau` never triggered
+- Val accuracy per epoch: 81.16 → 87.00 → 87.63 → 87.72 → 90.64 → 91.60 → 92.11 → 91.78 → **94.11** → 92.67
+- **Best validation accuracy: 94.11%** (+0.23pp over original Strategy E's 93.88%)
 - Saved as `model_E_finetuned_NPDD_final.h5` (23 MB, larger because unfrozen layers saved)
 
+> **CORRECTION (2026-08-22).** This section previously described a 14-epoch run at
+> LR 1e-4 halved to 5e-5 reaching 97.21%. No such run exists. The figures above are
+> transcribed from the saved cell outputs of notebook 09. See Issue 3 in
+> `PAPER_REVIEW_NOTES.md`.
+
 ### Validation results (4,585 images, all 10 classes):
-| Class | F1 | Notes |
-|---|---|---|
-| Bacterial Spot | 98.5% | |
-| Early Blight | 96.7% | |
-| Late Blight | 97.8% | |
-| Leaf Mold | 98.0% | |
-| Septoria Leaf Spot | 95.9% | |
-| Spider Mites | 95.7% | Lowest recall (93.6%) |
-| Target Spot | 93.4% | Lowest precision (90.9%) — confused with other blotch diseases |
-| Yellow Leaf Curl | 99.7% | Near-perfect |
-| Mosaic Virus | 99.4% | Was 0% on PlantDoc — fixed by 6.8x more training data |
-| Healthy | 97.0% | |
-| **Weighted avg** | **97.2%** | |
+| Class | Precision | Recall | F1 |
+|---|---|---|---|
+| Bacterial Spot | 94.6% | 95.3% | 95.0% |
+| Early Blight | 95.3% | 88.7% | 91.9% |
+| Late Blight | 95.6% | 94.2% | 94.9% |
+| Leaf Mold | 95.2% | 97.4% | 96.3% |
+| Septoria Leaf Spot | 92.7% | 87.6% | 90.1% |
+| Spider Mites | 94.7% | 89.9% | 92.2% |
+| Target Spot | 82.3% | 94.3% | 87.9% | 
+| Yellow Leaf Curl | 99.6% | 98.0% | 98.8% |
+| Mosaic Virus | 97.7% | 96.2% | 97.0% |
+| Healthy | 94.8% | 98.8% | 96.7% |
+| **Weighted avg** | **94.3%** | **94.1%** | **94.1%** |
+
+Weakest: Target Spot (82.3% precision — other blotch diseases over-assigned to it)
+and Septoria (87.6% recall). Early Blight recall 88.7%, consistent with the
+Early Blight / Septoria confusion pair.
 
 ### Test results (16 flat images, 3 classes only):
-- **93.75% accuracy (15/16 correct)**
-- Only miss: `TomatoEarlyBlight2.JPG` → predicted Septoria (52% confidence — model expressed uncertainty correctly)
-- Early Blight avg confidence: 67.7% (lower, reflecting class ambiguity) — label smoothing working
+- **100.00% accuracy (16/16 correct)**, avg confidence 75.54%
+- Early Blight avg confidence 55.8% vs Healthy 85.4% / Yellow Leaf Curl 89.1% — lower
+  confidence on the harder class, consistent with its 88.7% validation recall
+- **Not reportable as a result**: 16 images, 3 of 10 classes
+
+> **CORRECTION (2026-08-22).** Previously recorded as 93.75% (15/16) with
+> `TomatoEarlyBlight2.JPG` missed as Septoria at 52% confidence. The CSV on disk
+> (`outputs/npdd_validation/test_predictions_NPDD.csv`) records that image as Early
+> Blight at 89.22% confidence, Septoria probability 2.01%, and all 16 as correct.
 
 ---
 
@@ -197,7 +210,7 @@ pred = model.predict(arr, verbose=0)[0]  # (10,) softmax probs
 
 ## What Still Needs Doing
 1. **Retrain A-E** using patched notebooks (preprocess_input + label_smoothing) — patches are already applied to notebooks, just run them
-2. **Re-run notebook 08** (PlantDoc) after retraining to see actual improvement from the fixes
+2. **Evaluate a field-captured dataset** (see `FINDINGS.md` section 3) to measure real-world generalization
 3. Consider **stronger augmentation**: CutMix, MixUp, RandAugment
 4. NPDD test folder only tests 3/10 classes — need broader real-world test set
 5. Early Blight / Septoria pair — consider specialized binary classifier for this decision
@@ -210,11 +223,10 @@ pred = model.predict(arr, verbose=0)[0]  # (10,) softmax probs
 | Original PlantVillage training set | 6,527 images |
 | NPDD training set | 18,345 images |
 | Strategy E internal accuracy | 93.88% |
-| Strategy E PlantDoc accuracy | 24.35% |
-| Strategy E NPDD validation accuracy | **97.21%** |
-| NPDD test accuracy (16 images) | **93.75%** |
+| Strategy E NPDD validation accuracy | **94.11%** |
+| NPDD test accuracy (16 images, 3 classes — not reportable) | **100.00%** |
 | Label smoothing value used | 0.1 |
-| Fine-tune LR | 1e-4 (→ 5e-5 via ReduceLR) |
+| Fine-tune LR | 1e-5 (constant; ReduceLR never fired) |
 | Layers unfrozen in MobileNetV2 | Last 30 (BatchNorm kept frozen) |
 | Image input size | 224 × 224 × 3 |
 | Full report | `project_technical_report.txt` (556 lines) |

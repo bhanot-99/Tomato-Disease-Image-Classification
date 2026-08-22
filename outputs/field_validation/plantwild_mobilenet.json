@@ -1,0 +1,348 @@
+{
+  "dataset": "plantwild",
+  "tag": "mobilenet",
+  "preproc": "mobilenet",
+  "n_images": 1966,
+  "classes_present": [
+    "Bacterial Spot",
+    "Early Blight",
+    "Healthy",
+    "Late Blight",
+    "Leaf Mold",
+    "Septoria Leaf Spot",
+    "Mosaic Virus",
+    "Yellow Leaf Curl Virus"
+  ],
+  "classes_absent": [
+    "Spider Mites",
+    "Target Spot"
+  ],
+  "chance": 0.125,
+  "class_counts": {
+    "Bacterial Spot": 280,
+    "Early Blight": 346,
+    "Healthy": 226,
+    "Late Blight": 295,
+    "Leaf Mold": 239,
+    "Septoria Leaf Spot": 220,
+    "Mosaic Virus": 189,
+    "Yellow Leaf Curl Virus": 171
+  },
+  "models": {
+    "A": {
+      "overall": 0.17192268565615462,
+      "top3": 0.38453713123092575,
+      "mean_confidence": 0.6184366345405579,
+      "confidence_when_correct": 0.644260823726654,
+      "confidence_when_wrong": 0.6130751371383667,
+      "per_class": {
+        "Bacterial Spot": {
+          "n": 280,
+          "recall": 0.007142857142857143,
+          "top3": 0.16785714285714284
+        },
+        "Early Blight": {
+          "n": 346,
+          "recall": 0.5549132947976878,
+          "top3": 0.9624277456647399
+        },
+        "Healthy": {
+          "n": 226,
+          "recall": 0.5398230088495575,
+          "top3": 0.915929203539823
+        },
+        "Late Blight": {
+          "n": 295,
+          "recall": 0.0,
+          "top3": 0.04067796610169491
+        },
+        "Leaf Mold": {
+          "n": 239,
+          "recall": 0.012552301255230125,
+          "top3": 0.24686192468619247
+        },
+        "Septoria Leaf Spot": {
+          "n": 220,
+          "recall": 0.0,
+          "top3": 0.01818181818181818
+        },
+        "Mosaic Virus": {
+          "n": 189,
+          "recall": 0.010582010582010581,
+          "top3": 0.021164021164021163
+        },
+        "Yellow Leaf Curl Virus": {
+          "n": 171,
+          "recall": 0.09941520467836257,
+          "top3": 0.5263157894736842
+        }
+      },
+      "prediction_counts": {
+        "Bacterial Spot": 11,
+        "Early Blight": 811,
+        "Healthy": 848,
+        "Late Blight": 23,
+        "Leaf Mold": 182,
+        "Septoria Leaf Spot": 0,
+        "Spider Mites": 11,
+        "Target Spot": 15,
+        "Mosaic Virus": 3,
+        "Yellow Leaf Curl Virus": 62
+      },
+      "description": "Color only",
+      "model_file": "strategy_A_mobilenet_final.keras"
+    },
+    "B": {
+      "overall": 0.12105798575788403,
+      "top3": 0.3301119023397762,
+      "mean_confidence": 0.5724102258682251,
+      "confidence_when_correct": 0.5562353134155273,
+      "confidence_when_wrong": 0.5746380686759949,
+      "per_class": {
+        "Bacterial Spot": {
+          "n": 280,
+          "recall": 0.1357142857142857,
+          "top3": 0.42142857142857143
+        },
+        "Early Blight": {
+          "n": 346,
+          "recall": 0.2976878612716763,
+          "top3": 0.638728323699422
+        },
+        "Healthy": {
+          "n": 226,
+          "recall": 0.2345132743362832,
+          "top3": 0.5265486725663717
+        },
+        "Late Blight": {
+          "n": 295,
+          "recall": 0.02711864406779661,
+          "top3": 0.26101694915254237
+        },
+        "Leaf Mold": {
+          "n": 239,
+          "recall": 0.10460251046025104,
+          "top3": 0.2928870292887029
+        },
+        "Septoria Leaf Spot": {
+          "n": 220,
+          "recall": 0.004545454545454545,
+          "top3": 0.045454545454545456
+        },
+        "Mosaic Virus": {
+          "n": 189,
+          "recall": 0.0,
+          "top3": 0.026455026455026454
+        },
+        "Yellow Leaf Curl Virus": {
+          "n": 171,
+          "recall": 0.05847953216374269,
+          "top3": 0.1695906432748538
+        }
+      },
+      "prediction_counts": {
+        "Bacterial Spot": 181,
+        "Early Blight": 514,
+        "Healthy": 577,
+        "Late Blight": 121,
+        "Leaf Mold": 430,
+        "Septoria Leaf Spot": 6,
+        "Spider Mites": 32,
+        "Target Spot": 32,
+        "Mosaic Virus": 0,
+        "Yellow Leaf Curl Virus": 73
+      },
+      "description": "Segmented only",
+      "model_file": "strategy_B_mobilenet_final.keras"
+    },
+    "C": {
+      "overall": 0.14445574771108852,
+      "top3": 0.36063072227873855,
+      "mean_confidence": 0.6279463171958923,
+      "confidence_when_correct": 0.6417865753173828,
+      "confidence_when_wrong": 0.6256094574928284,
+      "per_class": {
+        "Bacterial Spot": {
+          "n": 280,
+          "recall": 0.060714285714285714,
+          "top3": 0.4642857142857143
+        },
+        "Early Blight": {
+          "n": 346,
+          "recall": 0.5028901734104047,
+          "top3": 0.8554913294797688
+        },
+        "Healthy": {
+          "n": 226,
+          "recall": 0.25663716814159293,
+          "top3": 0.5973451327433629
+        },
+        "Late Blight": {
+          "n": 295,
+          "recall": 0.010169491525423728,
+          "top3": 0.1016949152542373
+        },
+        "Leaf Mold": {
+          "n": 239,
+          "recall": 0.08368200836820083,
+          "top3": 0.3305439330543933
+        },
+        "Septoria Leaf Spot": {
+          "n": 220,
+          "recall": 0.0,
+          "top3": 0.00909090909090909
+        },
+        "Mosaic Virus": {
+          "n": 189,
+          "recall": 0.015873015873015872,
+          "top3": 0.031746031746031744
+        },
+        "Yellow Leaf Curl Virus": {
+          "n": 171,
+          "recall": 0.05263157894736842,
+          "top3": 0.18128654970760233
+        }
+      },
+      "prediction_counts": {
+        "Bacterial Spot": 60,
+        "Early Blight": 806,
+        "Healthy": 556,
+        "Late Blight": 40,
+        "Leaf Mold": 388,
+        "Septoria Leaf Spot": 0,
+        "Spider Mites": 25,
+        "Target Spot": 23,
+        "Mosaic Virus": 3,
+        "Yellow Leaf Curl Virus": 65
+      },
+      "description": "Random 50/50 mix",
+      "model_file": "strategy_C_mobilenet_final.keras"
+    },
+    "D": {
+      "overall": 0.16632756866734486,
+      "top3": 0.3728382502543235,
+      "mean_confidence": 0.6044510006904602,
+      "confidence_when_correct": 0.6286787390708923,
+      "confidence_when_wrong": 0.5996173024177551,
+      "per_class": {
+        "Bacterial Spot": {
+          "n": 280,
+          "recall": 0.075,
+          "top3": 0.43214285714285716
+        },
+        "Early Blight": {
+          "n": 346,
+          "recall": 0.638728323699422,
+          "top3": 0.9364161849710982
+        },
+        "Healthy": {
+          "n": 226,
+          "recall": 0.27876106194690264,
+          "top3": 0.6327433628318584
+        },
+        "Late Blight": {
+          "n": 295,
+          "recall": 0.0,
+          "top3": 0.04067796610169491
+        },
+        "Leaf Mold": {
+          "n": 239,
+          "recall": 0.07531380753138076,
+          "top3": 0.3723849372384937
+        },
+        "Septoria Leaf Spot": {
+          "n": 220,
+          "recall": 0.0,
+          "top3": 0.05909090909090909
+        },
+        "Mosaic Virus": {
+          "n": 189,
+          "recall": 0.0,
+          "top3": 0.015873015873015872
+        },
+        "Yellow Leaf Curl Virus": {
+          "n": 171,
+          "recall": 0.023391812865497075,
+          "top3": 0.16374269005847952
+        }
+      },
+      "prediction_counts": {
+        "Bacterial Spot": 62,
+        "Early Blight": 993,
+        "Healthy": 461,
+        "Late Blight": 44,
+        "Leaf Mold": 317,
+        "Septoria Leaf Spot": 4,
+        "Spider Mites": 23,
+        "Target Spot": 20,
+        "Mosaic Virus": 0,
+        "Yellow Leaf Curl Virus": 42
+      },
+      "description": "Fine-tuned A->Seg",
+      "model_file": "strategy_D_mobilenet_final.keras"
+    },
+    "E": {
+      "overall": 0.12461851475076297,
+      "top3": 0.3728382502543235,
+      "mean_confidence": 0.5201728343963623,
+      "confidence_when_correct": 0.4912569522857666,
+      "confidence_when_wrong": 0.5242892503738403,
+      "per_class": {
+        "Bacterial Spot": {
+          "n": 280,
+          "recall": 0.07857142857142857,
+          "top3": 0.4107142857142857
+        },
+        "Early Blight": {
+          "n": 346,
+          "recall": 0.3554913294797688,
+          "top3": 0.7976878612716763
+        },
+        "Healthy": {
+          "n": 226,
+          "recall": 0.13274336283185842,
+          "top3": 0.4424778761061947
+        },
+        "Late Blight": {
+          "n": 295,
+          "recall": 0.04745762711864407,
+          "top3": 0.26440677966101694
+        },
+        "Leaf Mold": {
+          "n": 239,
+          "recall": 0.07531380753138076,
+          "top3": 0.3054393305439331
+        },
+        "Septoria Leaf Spot": {
+          "n": 220,
+          "recall": 0.004545454545454545,
+          "top3": 0.013636363636363636
+        },
+        "Mosaic Virus": {
+          "n": 189,
+          "recall": 0.005291005291005291,
+          "top3": 0.005291005291005291
+        },
+        "Yellow Leaf Curl Virus": {
+          "n": 171,
+          "recall": 0.21052631578947367,
+          "top3": 0.5087719298245614
+        }
+      },
+      "prediction_counts": {
+        "Bacterial Spot": 115,
+        "Early Blight": 566,
+        "Healthy": 581,
+        "Late Blight": 94,
+        "Leaf Mold": 362,
+        "Septoria Leaf Spot": 2,
+        "Spider Mites": 33,
+        "Target Spot": 18,
+        "Mosaic Virus": 1,
+        "Yellow Leaf Curl Virus": 194
+      },
+      "description": "Class-aware routing",
+      "model_file": "strategy_E_mobilenet_final.keras"
+    }
+  }
+}
