@@ -8,7 +8,7 @@ This project investigates how **image preprocessing domain** affects deep learni
 
 > **Research Hypothesis:** Different tomato diseases rely on different visual cues (color contrast vs. texture/shape). A smart, class-aware mixing strategy that trains each class on its optimal image domain should outperform any single uniform strategy.
 
-Additionally, the project explores robust **fine-tuning** on the New Plant Diseases Dataset (NPDD). Validation against field-captured imagery is in progress; see `FINDINGS.md` section 3.
+Additionally, the project explores robust **fine-tuning** on the New Plant Diseases Dataset (NPDD), and validates against field-captured imagery — where performance collapses to near chance. See `FINDINGS.md` section 3 and `outputs/field_validation/FIELD_VALIDATION_REPORT.md`.
 
 ---
 
@@ -34,8 +34,18 @@ The core research contribution. Each disease class was explicitly routed to the 
 
 ## 🌍 Real-World Generalization & Fine-Tuning
 
-### Cross-Dataset Validation (in progress)
-Models trained purely on controlled lab backgrounds are expected to degrade in complex, natural environments. Quantifying that **domain shift** requires a field-captured dataset with reliable labels; sourcing is in progress and no field-generalization number is claimed until it lands. See `FINDINGS.md` section 3.
+### Cross-Dataset Validation
+Models trained on controlled lab backgrounds degrade in complex natural environments. Four candidate field datasets were audited; three were rejected on data-quality grounds (PlantDoc, Tomato-Village Variant-a and Variant-c). **PlantWild** (1,966 tomato images, 8 classes) was evaluated:
+
+| Strategy | Internal | PlantWild (field) | Gap |
+|---|---|---|---|
+| A | 89.21% | 17.19% | −72.0 |
+| B | 88.42% | 12.11% | −76.3 |
+| C | 87.42% | 14.45% | −73.0 |
+| D | 90.92% | 16.63% | −74.3 |
+| **E** | **93.71%** | **12.46%** | **−81.2** |
+
+Chance is 12.5%, and top-3 accuracy is also at chance. **Strategy E's internal advantage does not transfer** — it has the largest gap of the five and finishes second-worst. The absolute figures are a lower bound rather than a measurement, since 20–40% of three classes show lesions on fruit rather than foliage; the comparison *between* strategies is unaffected, as all five were scored on identical images. Full detail and the dataset audits: `outputs/field_validation/FIELD_VALIDATION_REPORT.md`.
 
 ### Fine-Tuning on New Plant Diseases Dataset (NPDD)
 To address the domain shift, **Strategy E was fine-tuned** on the New Plant Diseases Dataset (18,345 training images, offering better class balance and lighting variations).
@@ -96,7 +106,7 @@ TomatoClassification/
 - [x] Implementation of proper MobileNetV2 Preprocessing & Label Smoothing
 - [x] **Grad-CAM visualizations** (explainability module)
 - [x] **Severity estimation** regression module
-- [ ] **Cross-dataset validation** (field dataset pending)
+- [x] **Cross-dataset validation** (4 datasets audited, PlantWild evaluated)
 - [x] **Fine-tuning on diverse data** (NPDD)
 
 ---

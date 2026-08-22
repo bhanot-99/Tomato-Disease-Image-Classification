@@ -296,8 +296,7 @@ The docs have accumulated and partly contradict each other. Order of authority:
 1. **`scripts/pipeline.py` + `scripts/field_evaluation.py`** — the code that actually runs.
    Ultimate authority.
 2. **`FINDINGS.md`** — the consolidated result of the re-validation work. Authority for the
-   internal benchmark. *Its section 3 is currently stale — it still says a field dataset is
-   "in progress" when PlantWild has since been evaluated.*
+   internal benchmark, and its section 3 now carries the field result as well.
 3. **`outputs/field_validation/FIELD_VALIDATION_REPORT.md`** — authority for everything
    field-related, including the dataset audits.
 4. **`DOC_AUDIT.md`** — what in the older documents can and cannot be trusted.
@@ -312,9 +311,9 @@ The docs have accumulated and partly contradict each other. Order of authority:
 
 ## 8. What to do next, in order
 
-**Immediately — housekeeping.** Commit the current work. The tree holds the PlantDoc
-withdrawal (staged), the field evaluation (untracked), and today's corrections, all
-uncommitted. Update `FINDINGS.md` section 3, which contradicts the field report.
+**Housekeeping — done.** All the work described here is committed and merged to `main`
+(PR #2), and `FINDINGS.md` section 3 and the README now carry the field result rather than
+describing it as pending.
 
 **Then — the paper, in this order:**
 

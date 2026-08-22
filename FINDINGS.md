@@ -1,11 +1,13 @@
 # Consolidated Findings — Strategy E Re-validation
 
 **Date:** 2026-08-22
-**Scope:** Issue 1 from `PAPER_REVIEW_NOTES.md`, resolved against re-processed data and
-retrained models. Issue 2 (field generalisation) is open pending evaluation on a
-field-captured dataset — see section 3.
-**Companion documents:** `PAPER_REVIEW_NOTES.md` (the review that motivated this work),
-`RESULTS.md` (chronological log with full run detail and file inventory).
+**Scope:** Issues 1 and 2 from `PAPER_REVIEW_NOTES.md`, resolved against re-processed data and
+retrained models. Issue 2 is answered — see section 3 — but the paper has not yet been rewritten
+to match.
+**Companion documents:** `PROJECT_OVERVIEW.md` (start here — the map to everything else),
+`PAPER_REVIEW_NOTES.md` (the review that motivated this work),
+`outputs/field_validation/FIELD_VALIDATION_REPORT.md` (authority for all field results and
+dataset audits), `DOC_AUDIT.md`, `RESULTS.md` (chronological run log).
 
 This document consolidates what the experiments established, organised around what needs to
 change in the paper rather than around when it was run.
@@ -63,16 +65,23 @@ Target Spot -> color, Yellow Leaf Curl -> segmented, Mosaic -> segmented.
 
 ### 2.3 Strategy E's advantage is demonstrated in-domain only (must state)
 
-Every number supporting class-aware routing comes from PlantVillage. Whether the advantage
-survives on field imagery is untested pending the replacement dataset (section 3), so the paper
-must scope the claim to the internal benchmark rather than implying general superiority.
+Every number supporting class-aware routing comes from PlantVillage. It has now been tested on
+field imagery and **it does not survive**: on PlantWild, Strategy E has the largest
+lab-to-field gap of the five (−81.2 points) and finishes second-worst, inverting its +4.5-point
+internal advantage over Strategy A (section 3). The paper must scope the claim to the internal
+benchmark explicitly, and state the inversion rather than leaving it implied.
 
 ### 2.4 Section V-D rests on the wrong evidence (must replace)
 
 The current text supports its generalisation claim with the NPDD fine-tuning result alone. NPDD
 is a **different claim**: adapting to a second lab dataset, not generalising to field
-photographs. It cannot substitute for a field evaluation. Section V-D should be rewritten once
-the replacement field dataset (section 3) has been evaluated.
+photographs. It cannot substitute for a field evaluation.
+
+The field evaluation now exists (section 3), so V-D can and must be rewritten from it. It should
+be built around the *relative* finding — that routing's advantage does not transfer — plus the
+calibration result, both of which are robust to the evaluation set's contamination because all
+five strategies were scored on identical images. It should **not** report a point estimate of
+field accuracy. This is the highest-value remaining edit and needs no further compute.
 
 ### 2.5 Smaller corrections (from `PAPER_REVIEW_NOTES.md` Issue 5, unchanged)
 
@@ -82,7 +91,7 @@ table against prior published results; single seed, no confidence intervals.
 
 ---
 
-## 3. Field validation: PlantDoc excluded on data-quality grounds
+## 3. Field validation: PlantDoc withdrawn, PlantWild evaluated
 
 Cross-dataset validation was originally run against the tomato subset of PlantDoc (Singh et al.,
 2020) — 731 images, 8 of the 10 classes. That evaluation has been **withdrawn and removed from
@@ -107,12 +116,44 @@ tomato subset was not filtered to leaf photographs of the labelled species. A mo
 against it is partly being scored on its ability to classify stock illustrations and slide
 screenshots, so neither a low score nor a high one is interpretable.
 
-**Replacement in progress.** Field-captured imagery is being sourced instead, with
-`Tomato-Village` (Gehlot et al., *Multimedia Systems*, 2023 — original photography from fields in
-Jodhpur and Jaipur, Rajasthan) the leading candidate, and `PlantWild` (Wei et al., 2024) a
-secondary one. PlantWild is itself web-scraped and must pass the same audit before use. Until a
-replacement is evaluated, **the paper has no field-generalisation result** and must not claim
-one.
+**Replacement: found, audited, evaluated.** Two further candidates were rejected —
+`Tomato-Village` Variant-a (detached leaves on white sheets, i.e. the same domain as
+PlantVillage; 1,616 files derived from 391 source photographs; its own splits leak) and
+Variant-c (correct field domain, but only one class overlaps the ten PlantVillage labels; it
+retains value as an open-set test). `PlantWild` (Wei et al., 2024) was accepted with reservations
+and evaluated: 1,966 tomato images, 8 of 10 classes.
+
+| Strategy | Internal | PlantWild | Gap |
+|---|---|---|---|
+| A — color | 89.21% | 17.19% | −72.0 |
+| B — segmented | 88.42% | 12.11% | −76.3 |
+| C — mixed | 87.42% | 14.45% | −73.0 |
+| D — fine-tuned | 90.92% | 16.63% | −74.3 |
+| **E — routing** | **93.71%** | **12.46%** | **−81.2** |
+
+Chance is 12.5%, and top-3 accuracy is also at chance (33–38.5% against a 37.5% baseline), so
+the representation retains almost no usable signal. **Strategy E has the largest gap and
+finishes second-worst.**
+
+The absolute figures are a **lower bound, not a measurement**: PlantWild is web-scraped, and
+20–40% of the three fruit-affected classes show lesions on fruit rather than foliage — images no
+leaf classifier could be expected to get right. The *paired comparison* between strategies is
+unaffected, because all five were scored on identical images, so a contaminated image is equally
+unclassifiable for every model.
+
+What is safe to claim, with no further work:
+
+1. All five strategies lose 72–81 points transferring from PlantVillage to in-the-wild imagery.
+2. Class-aware routing's internal advantage does not transfer; Strategy E has the largest gap.
+3. Label smoothing cuts out-of-domain confidence from ~86% to ~57% without changing accuracy —
+   the models become appropriately uncertain rather than confidently wrong. Replicated across two
+   independent field datasets, and the cleanest positive result in this work.
+
+Not claimable without a leaf-only filtered re-evaluation: any precise field accuracy figure, and
+any explanation of *why* particular classes fail.
+
+Full detail, including the four dataset audits and their evidence, is in
+`outputs/field_validation/FIELD_VALIDATION_REPORT.md`.
 
 ---
 
@@ -137,10 +178,12 @@ end, for all strategies.
 | Item | Effort |
 |---|---|
 | Multi-seed routing stability — report the table as a majority vote with stability counts | ~4 h compute |
-| Evaluate the replacement field dataset (section 3) and rewrite Section V-D from it | ~1 h compute |
+| ~~Evaluate a replacement field dataset~~ — **done**: PlantWild evaluated, three other candidates rejected on audit (section 3) | done |
+| **Rewrite Section V-D** from the field result — relative finding plus calibration, no point estimate | writing, no compute |
 | Aggressive augmentation (lighting/background/angle) — untested lever for the field gap; `scripts/pipeline.py --aug heavy` | ~4 h compute, retrain |
 | ~~Reconcile NPDD numbers (Issue 3)~~ — **done**: the paper (94.11% @ 1e-5) matches notebook 09 exactly; `project_technical_report.txt` and `GEMINI.md` described a run that never happened and have been corrected | done |
-| **Audit `project_technical_report.txt` and `GEMINI.md` against notebook outputs** — Issue 3 showed both contain fabricated run detail, so every number sourced only from them is unverified | ~2-3 h |
+| ~~Audit `project_technical_report.txt` and `GEMINI.md`~~ — **done**, see `DOC_AUDIT.md`: the NPDD section was the only fabricated region; 162 of 168 percentage claims corroborate exactly | done |
+| Optional field strengtheners: cite the withdrawn PlantDoc result for the *relative* finding only (free, doubles replication); paired McNemar test on A vs E; leaf-only filtered PlantWild re-evaluation; Variant-c open-set test | varies |
 | Port notebooks to Linux paths and rebuild notebook 05's `CLASS_ROUTING` from the val data | ~30 min |
 | Paper edits per section 2 | writing |
 
