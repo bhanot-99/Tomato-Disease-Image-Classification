@@ -19,6 +19,14 @@ strategies:
   rescale   = 1./255, what every reported model in the paper used
   mobilenet = mobilenet_v2.preprocess_input + label smoothing 0.1 (the repo's
               documented fix, see scripts/patch_notebooks.py)
+
+--aug selects the training-time augmentation, so Issue 2 (domain shift) can be
+attacked separately from Issue 4 (preprocessing):
+  standard = what the paper's models saw: rotation 15 deg, h-flip, zoom/shift 0.1
+  heavy    = augmentation aimed at the three factors that separate lab images
+             from field images: illumination (brightness, channel shift),
+             viewpoint (rotation 40 deg, shear, both flips) and framing/scale
+             (zoom 0.6-1.4, shift 0.25). See FINDINGS.md section 3.
 """
 import argparse
 import json
@@ -45,6 +53,10 @@ BATCH_SIZE = 32
 NUM_CLASSES = 10
 EPOCHS = 20
 FINETUNE_EPOCHS = 10
+# Heavy augmentation makes each epoch a harder fit, so it needs a longer budget
+# and more patience before early stopping calls it.
+HEAVY_EPOCHS = 40
+HEAVY_FINETUNE_EPOCHS = 20
 SEED = 42
 TAG_DOMAIN = {"A": "color", "B": "segmented", "C": "mixed"}
 
@@ -71,13 +83,29 @@ def make_loss(tf, preproc):
     return "categorical_crossentropy"
 
 
-def generators(tf, root, preproc, splits=("train", "val", "test")):
+AUGMENTATIONS = {
+    # The paper's setting: enough jitter to regularize, not enough to bridge
+    # lab-to-field.
+    "standard": dict(
+        rotation_range=15, horizontal_flip=True, zoom_range=0.1,
+        width_shift_range=0.1, height_shift_range=0.1,
+    ),
+    # brightness_range and channel_shift_range act on the raw 0-255 array before
+    # `standardize()` applies preprocess_input, so they stay in the units they
+    # expect.
+    "heavy": dict(
+        rotation_range=40, horizontal_flip=True, vertical_flip=True,
+        zoom_range=[0.6, 1.4], width_shift_range=0.25, height_shift_range=0.25,
+        shear_range=0.2, brightness_range=[0.5, 1.5], channel_shift_range=40.0,
+        fill_mode="reflect",
+    ),
+}
+
+
+def generators(tf, root, preproc, splits=("train", "val", "test"), aug="standard"):
     from tensorflow.keras.preprocessing.image import ImageDataGenerator
     base = datagen_kwargs(preproc)
-    train_gen = ImageDataGenerator(
-        rotation_range=15, horizontal_flip=True, zoom_range=0.1,
-        width_shift_range=0.1, height_shift_range=0.1, **base
-    )
+    train_gen = ImageDataGenerator(**AUGMENTATIONS[aug], **base)
     eval_gen = ImageDataGenerator(**base)
     out = {}
     for split in splits:
@@ -105,29 +133,31 @@ def build_model(tf, preproc):
     return model
 
 
-def callbacks_for(tf, ckpt):
+def callbacks_for(tf, ckpt, patience=5):
     from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
     return [
-        EarlyStopping(monitor="val_loss", patience=5, restore_best_weights=True, verbose=1),
+        EarlyStopping(monitor="val_loss", patience=patience, restore_best_weights=True, verbose=1),
         ModelCheckpoint(str(ckpt), monitor="val_accuracy", save_best_only=True, verbose=0),
-        ReduceLROnPlateau(monitor="val_loss", factor=0.5, patience=3, min_lr=1e-6, verbose=1),
+        ReduceLROnPlateau(monitor="val_loss", factor=0.5, patience=max(2, patience // 2),
+                          min_lr=1e-6, verbose=1),
     ]
 
 
-def train_one(tf, name, root, preproc, tag):
-    print(f"\n{'='*70}\nTraining {name}  <- {root}\n{'='*70}")
-    gens = generators(tf, root, preproc, ("train", "val"))
+def train_one(tf, name, root, preproc, tag, aug="standard", epochs=EPOCHS, patience=5):
+    print(f"\n{'='*70}\nTraining {name}  <- {root}  (aug={aug}, epochs={epochs})\n{'='*70}")
+    gens = generators(tf, root, preproc, ("train", "val"), aug=aug)
     model = build_model(tf, preproc)
     ckpt = MODEL_DIR / f"{name}_{tag}_best.keras"
-    hist = model.fit(gens["train"], epochs=EPOCHS, validation_data=gens["val"],
-                     callbacks=callbacks_for(tf, ckpt), verbose=2)
+    hist = model.fit(gens["train"], epochs=epochs, validation_data=gens["val"],
+                     callbacks=callbacks_for(tf, ckpt, patience), verbose=2)
     final = MODEL_DIR / f"{name}_{tag}_final.keras"
     model.save(final)
     print(f"saved {final}")
     return model, hist.history
 
 
-def finetune_D(tf, model_a_path, preproc, tag):
+def finetune_D(tf, model_a_path, preproc, tag, aug="standard",
+               epochs=FINETUNE_EPOCHS, patience=5):
     """Strategy D: Strategy A fine-tuned on segmented, top 30 layers, BN frozen."""
     print(f"\n{'='*70}\nTraining strategy_D (fine-tune A on segmented)\n{'='*70}")
     model = tf.keras.models.load_model(model_a_path, compile=False)
@@ -139,10 +169,10 @@ def finetune_D(tf, model_a_path, preproc, tag):
             layer.trainable = True
     model.compile(optimizer=tf.keras.optimizers.Adam(1e-5),
                   loss=make_loss(tf, preproc), metrics=["accuracy"])
-    gens = generators(tf, DOMAIN_PATHS["segmented"], preproc, ("train", "val"))
+    gens = generators(tf, DOMAIN_PATHS["segmented"], preproc, ("train", "val"), aug=aug)
     ckpt = MODEL_DIR / f"strategy_D_{tag}_best.keras"
-    hist = model.fit(gens["train"], epochs=FINETUNE_EPOCHS, validation_data=gens["val"],
-                     callbacks=callbacks_for(tf, ckpt), verbose=2)
+    hist = model.fit(gens["train"], epochs=epochs, validation_data=gens["val"],
+                     callbacks=callbacks_for(tf, ckpt, patience), verbose=2)
     final = MODEL_DIR / f"strategy_D_{tag}_final.keras"
     model.save(final)
     return model, hist.history
@@ -178,21 +208,32 @@ def build_selective(routing, out_root):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--preproc", choices=["rescale", "mobilenet"], default="mobilenet")
+    ap.add_argument("--aug", choices=sorted(AUGMENTATIONS), default="standard")
+    ap.add_argument("--epochs", type=int, default=None)
+    ap.add_argument("--finetune-epochs", type=int, default=None)
+    ap.add_argument("--patience", type=int, default=None)
     ap.add_argument("--tag", default=None, help="run tag (default: same as --preproc)")
     args = ap.parse_args()
     tag = args.tag or args.preproc
+    heavy = args.aug == "heavy"
+    epochs = args.epochs or (HEAVY_EPOCHS if heavy else EPOCHS)
+    ft_epochs = args.finetune_epochs or (HEAVY_FINETUNE_EPOCHS if heavy else FINETUNE_EPOCHS)
+    patience = args.patience or (8 if heavy else 5)
 
     tf = setup_tf()
     for d in (ROUTING_DIR, RESULTS_DIR, MODEL_DIR):
         d.mkdir(parents=True, exist_ok=True)
 
-    run = {"tag": tag, "preproc": args.preproc, "epochs": EPOCHS, "seed": SEED,
+    run = {"tag": tag, "preproc": args.preproc, "aug": args.aug,
+           "aug_params": AUGMENTATIONS[args.aug], "epochs": epochs,
+           "finetune_epochs": ft_epochs, "patience": patience, "seed": SEED,
            "history": {}, "val_per_class": {}, "test": {}}
     models = {}
 
     # --- 1/2. Train A,B,C and measure per-class accuracy on VAL only ---
     for t, domain in TAG_DOMAIN.items():
-        m, h = train_one(tf, f"strategy_{t}", DOMAIN_PATHS[domain], args.preproc, tag)
+        m, h = train_one(tf, f"strategy_{t}", DOMAIN_PATHS[domain], args.preproc, tag,
+                         aug=args.aug, epochs=epochs, patience=patience)
         models[t] = m
         run["history"][t] = {k: [float(v) for v in vs] for k, vs in h.items()}
 
@@ -229,10 +270,12 @@ def main():
     # --- 4/5. Assemble and train E, plus D ---
     sel_root = DATA / f"processed_selective_{tag}"
     build_selective(routing, sel_root)
-    models["E"], hE = train_one(tf, "strategy_E", sel_root, args.preproc, tag)
+    models["E"], hE = train_one(tf, "strategy_E", sel_root, args.preproc, tag,
+                                aug=args.aug, epochs=epochs, patience=patience)
     run["history"]["E"] = {k: [float(v) for v in vs] for k, vs in hE.items()}
 
-    models["D"], hD = finetune_D(tf, MODEL_DIR / f"strategy_A_{tag}_final.keras", args.preproc, tag)
+    models["D"], hD = finetune_D(tf, MODEL_DIR / f"strategy_A_{tag}_final.keras", args.preproc,
+                                 tag, aug=args.aug, epochs=ft_epochs, patience=patience)
     run["history"]["D"] = {k: [float(v) for v in vs] for k, vs in hD.items()}
 
     # --- 6. Single test-set evaluation of all five ---

@@ -19,154 +19,6 @@ Running log of actual results (metrics, files produced, dates) from work done on
 
 ## Entries
 
-## 2026-08-22 — Issue 2: definitive PlantDoc evaluation (paper-grade, supersedes earlier run)
-
-- Script: `scripts/plantdoc_final_evaluation.py` (supersedes notebook 08 and the earlier
-  `scripts/eval_plantdoc.py` ablation, whose JSON has been removed to avoid two competing
-  sources of truth)
-- **Paper-ready report: `outputs/cross_dataset_validation/PLANTDOC_REPORT.md`** — six numbered
-  tables plus three figures, formatted for direct use in the paper.
-- Data: PlantDoc tomato subset, train+test pooled, **731 images / 8 classes**, chance 12.5%.
-  Spider Mites and Target Spot have no PlantDoc equivalent.
-- Each model evaluated with the scaling it was trained with (notebook 08 mismatched these; worth
-  ~1 point).
-
-Re-measurement reproduces the paper's published Section V numbers **exactly** (A 22.98%,
-B 24.21%, C 24.49%, D 21.61%, E 24.35%), confirming the measurement chain. Inference is
-deterministic, so re-running cannot and did not change the result.
-
-### Lab vs field, Issue-1 generation models
-
-| Strategy | PlantVillage | PlantDoc | Gap | Top-3 field |
-|---|---|---|---|---|
-| A — color | 89.21% | 21.20% | -68.0 | 51.30% |
-| B — segmented | 88.42% | 25.72% | -62.7 | 53.76% |
-| C — mixed | 87.42% | 25.31% | -62.1 | 56.77% |
-| D — fine-tuned | 90.92% | 22.85% | -68.1 | 57.05% |
-| E — selective | 93.71% | 23.67% | -70.0 | 54.58% |
-
-Strategy E has the **largest** generalization gap of the five, and on field images all five are
-within ~4 points — indistinguishable. Class-aware routing is a PlantVillage-specific gain.
-
-### New findings from this run
-
-**Top-3 accuracy is 51-57% against top-1 of 21-26%.** The representation retains usable signal
-that the decision boundary fails to rank. This is diagnostic: the models are not blind to field
-images, they are biased — which is why test-time corrections help only marginally (+2 to +4
-points from TTA, centre-cropping, restriction to present classes and prior correction, all
-tested and exhausted).
-
-**Predictions collapse onto three classes.** For Strategy E, 572 of 731 predictions (78%) are
-Early Blight, Late Blight or Septoria. Mosaic Virus receives zero predictions from any model.
-Prediction onto the two absent classes is 0.1-3.0%, ruling out hallucination of missing
-categories.
-
-**Failure is disease-specific, not uniform.** Late Blight (38.7-61.3%), Septoria (23.0-50.7%) and
-Early Blight (26.5-63.9%) retain partial signal across strategies; Bacterial Spot (0.0-7.5%),
-Leaf Mold (3.3-5.5%), Yellow Leaf Curl (0.0-5.3%) and Mosaic Virus (0.0% everywhere) do not.
-
-**Label smoothing improved calibration, not accuracy.** Mean confidence fell from ~85% (paper
-generation) to 51-64%. A 51%-confident prediction can be escalated to a human; an 85%-confident
-wrong one cannot.
-
-### Figures produced
-
-`fig_internal_vs_plantdoc.png`, `fig_plantdoc_per_class.png`, `fig_plantdoc_confusion_E.png`.
-
-### Issue 2 status: MEASURED — no remedy found
-
-Confirmed across two model generations and both scalings. Neither the Issue 1 leak fix nor the
-Issue 4 preprocessing fix moves field accuracy. The "diagnose then fix" narrative proposed in
-`PAPER_REVIEW_NOTES.md` is not supported by the data; the paper should report the negative result
-with the per-class breakdown, the top-3 diagnostic and the calibration gain as the substantive
-contributions. Untested lever: background randomisation using the segmentation masks, plus
-aggressive augmentation (requires retraining).
-
----
-
-## 2026-08-22 — Issue 2: PlantDoc cross-dataset validation, all three model generations (superseded)
-
-- Script: `scripts/eval_plantdoc.py` (new; portable, and fixes a bug in notebook 08 — see below)
-- Data: `validation/PlantDoc-Dataset`, train+test pooled = **731 tomato images**, 8 of the 10
-  PlantVillage classes (Spider Mites and Target Spot have no PlantDoc equivalent). Chance = 12.5%.
-- Every model evaluated under BOTH input scalings, to separate a suspected measurement artifact
-  from real domain shift.
-
-### Notebook 08 has a preprocessing bug — but it is NOT the cause
-
-Notebook 08 cell 5 applies `mobilenet_v2.preprocess_input` (pixels -> [-1,1]) at inference to
-models trained with `rescale=1./255` (pixels -> [0,1]); its comment claims this "matches
-training". It does not. **However, the ablation shows this costs ~1 point, not 60.** Strategy A
-scores 22.98% under correct scaling vs 23.80% under the mismatched scaling. The bug is worth
-fixing for correctness but explains none of the collapse. (Hypothesis raised and rejected in the
-same run — recorded here so it is not re-investigated later.)
-
-### The domain shift is real and robust to every fix so far
-
-| Generation | A | B | C | D | E |
-|---|---|---|---|---|---|
-| Paper (leaky routing, 1./255) | 23.0% | 24.2% | 24.5% | 21.6% | 24.4% |
-| Honest routing, 1./255 | 22.6% | 22.6% | 22.0% | 21.3% | 24.2% |
-| Honest routing + preprocess_input | 21.2% | 25.7% | 25.3% | 22.8% | 23.7% |
-
-All 15 models sit in a 21-26% band. Neither the Issue 1 leak fix nor the Issue 4 preprocessing
-fix moves real-world performance. **The narrative proposed in PAPER_REVIEW_NOTES.md Issue 2 —
-"show the fix recovering performance" — is not supported. There is no recovery.** What the data
-supports is a robust negative result: a model can reach 93.7% on PlantVillage and stay at ~24%
-on field photographs, and the standard remedies do not close it.
-
-Note also that Strategy E's internal advantage (+4 points over A) does **not** transfer: on
-PlantDoc all five strategies are within ~4 points of each other, i.e. indistinguishable.
-Class-aware routing is a PlantVillage-specific gain.
-
-### Label smoothing worked — on calibration, not accuracy
-
-| Generation | mean confidence |
-|---|---|
-| Paper | 82-85% |
-| Honest routing, 1./255 | 82-90% |
-| Honest routing + preprocess_input + label smoothing 0.1 | **51-64%** |
-
-The models stopped being confidently wrong and became appropriately uncertain on out-of-domain
-images. This is a genuine, reportable deployment improvement (a 51%-confident prediction can be
-escalated to a human; an 85%-confident wrong one cannot) and is worth a paragraph even though
-accuracy is flat.
-
-### Failure is concentrated, not uniform — Strategy E per class
-
-| Class | Paper model | Honest + preprocess_input |
-|---|---|---|
-| Late Blight | 68.5% | 47.7% |
-| Septoria Leaf Spot | 41.2% | 40.5% |
-| Early Blight | 41.0% | 26.5% |
-| Healthy | 4.8% | **37.1%** |
-| Bacterial Spot | 1.9% | 7.5% |
-| Leaf Mold | 1.1% | 4.4% |
-| Yellow Leaf Curl Virus | 1.3% | 4.0% |
-| Mosaic Virus | 0.0% | 0.0% |
-
-Three diseases are partially recognised in the field; four are essentially invisible, and Mosaic
-Virus is 0.0% in every configuration tested. This is a far more specific finding than a single
-aggregate 24% and should replace it in the paper.
-
-Hallucination onto the two absent classes is negligible (0.1-3.0% of predictions), ruling out
-"the model invents missing classes" as an explanation.
-
-- Files produced: `outputs/cross_dataset_validation/plantdoc_preprocessing_ablation.json`
-  (per model: overall, per class, mean confidence, hallucination rate, under both scalings)
-
-### Issue 2 status: MEASURED, narrative needs rewriting
-
-The failure is confirmed, quantified across three model generations, and traced to specific
-classes. What is NOT available is a fix that recovers performance — so the paper should report
-the negative result honestly (with the calibration improvement and the per-class breakdown as
-the substantive contributions) rather than promising a remedy. Untested remaining lever:
-aggressive augmentation for lighting/background/angle, which requires retraining; and NPDD
-fine-tuning (notebook 09), which is a different claim — adapting to a second lab dataset, not
-generalising to field photos.
-
----
-
 ## 2026-08-22 — Issue 1 fix: leak-free Strategy E, corrected preprocessing (pass 2 of 2)
 
 - Script: `scripts/pipeline.py --preproc mobilenet`
@@ -190,7 +42,7 @@ published 93.88% that was leak-inflated. The contribution stands. Strategy D is 
 clearly benefits from correct preprocessing (+3.57 over pass 1); A and C are unchanged within
 noise, which is expected — the internal test set shares whatever scaling training used, so
 `preprocess_input` cannot show its value here. Its payoff should appear on cross-dataset
-PlantDoc (notebook 08), which has not yet been re-run.
+evaluation against field imagery, which has not yet been re-run.
 
 ### IMPORTANT CAVEAT — the routing table is not stable
 
@@ -259,7 +111,7 @@ Routing is derived from validation data only; the test split is evaluated once, 
 strategies, at the end. Still open from PAPER_REVIEW_NOTES.md: notebook 05's in-file
 `CLASS_ROUTING` constant is still the legacy test-derived table and the notebooks still carry
 Windows paths, so the notebooks do not yet reproduce this result — `scripts/pipeline.py` is the
-authoritative path. Issue 2 (PlantDoc) needs notebook 08 re-run against these new models.
+authoritative path.
 
 ---
 
