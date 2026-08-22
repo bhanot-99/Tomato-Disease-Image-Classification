@@ -8,7 +8,7 @@ This project investigates how **image preprocessing domain** affects deep learni
 
 > **Research Hypothesis:** Different tomato diseases rely on different visual cues (color contrast vs. texture/shape). A smart, class-aware mixing strategy that trains each class on its optimal image domain should outperform any single uniform strategy.
 
-Additionally, the project explores **cross-dataset generalization** using the PlantDoc dataset, and robust **fine-tuning** on the New Plant Diseases Dataset (NPDD) to bridge the domain gap between lab-controlled and real-field images.
+Additionally, the project explores robust **fine-tuning** on the New Plant Diseases Dataset (NPDD). Validation against field-captured imagery is in progress; see `FINDINGS.md` section 3.
 
 ---
 
@@ -34,15 +34,17 @@ The core research contribution. Each disease class was explicitly routed to the 
 
 ## 🌍 Real-World Generalization & Fine-Tuning
 
-### Cross-Dataset Validation (PlantDoc)
-When testing our PlantVillage-trained Strategy E model on real-world field images from the **PlantDoc** dataset, accuracy dropped to **~24%**. This highlighted a severe **domain shift**: models trained purely on controlled lab backgrounds struggle in complex, natural environments.
+### Cross-Dataset Validation (in progress)
+Models trained purely on controlled lab backgrounds are expected to degrade in complex, natural environments. Quantifying that **domain shift** requires a field-captured dataset with reliable labels; sourcing is in progress and no field-generalization number is claimed until it lands. See `FINDINGS.md` section 3.
 
 ### Fine-Tuning on New Plant Diseases Dataset (NPDD)
 To address the domain shift, **Strategy E was fine-tuned** on the New Plant Diseases Dataset (18,345 training images, offering better class balance and lighting variations).
-- **Configuration:** Unfroze the last 30 MobileNetV2 layers, learning rate `1e-4`, label smoothing `0.1`.
-- **Validation Accuracy:** Jumped to **97.21%** (+3.33% over original Strategy E).
-- **Unseen Field Test:** Achieved **93.75% accuracy** on entirely flat, real-world field test images.
-- **Improved Confidence Calibration:** The model now correctly expresses lower confidence on ambiguous class pairs (like Early Blight vs. Septoria Leaf Spot) instead of being overconfident, thanks to Categorical Cross-Entropy with label smoothing.
+- **Configuration:** Unfroze the last 30 MobileNetV2 layers, learning rate `1e-5`, label smoothing `0.1`.
+- **Validation Accuracy:** **94.11%** (+0.23pp over original Strategy E), best of 10 epochs.
+- **NPDD test folder:** 16/16 correct — but this is 16 images covering only 3 of 10 classes, from NPDD's own test split, **not** field imagery. It is not a reportable result.
+- **Improved Confidence Calibration:** Label smoothing substantially lowers confidence on out-of-domain images (~86% → ~57%) without improving accuracy — the model becomes appropriately uncertain rather than confidently wrong.
+
+> **Correction (2026-08-22).** This section previously claimed 97.21% validation at `lr=1e-4` and "93.75% on real-world field test images". Those figures came from a run that does not exist in this repository, and the 16-image set is not field imagery. See `PAPER_REVIEW_NOTES.md` Issue 3 and `DOC_AUDIT.md`.
 
 ---
 
@@ -57,13 +59,12 @@ During development, significant improvements were implemented to properly align 
 ```
 TomatoClassification/
 ├── dataset/                    # Original PlantVillage split
-├── validation/                 # PlantDoc and NPDD datasets
+├── validation/                 # NPDD dataset
 ├── models/                     # Saved .h5 models (Strategy A-E & Finetuned)
 ├── notebooks/                  
 │   ├── 01-05_*                 # Training for Strategies A-E
 │   ├── 06_gradcam.ipynb        # GradCAM visualization
 │   ├── 07_severity_estimator.ipynb # Disease severity estimation
-│   ├── 08_cross_dataset_validation_plantdoc.ipynb
 │   └── 09_finetune_and_test_new_plant_diseases.ipynb
 ├── outputs/                    # Visualizations, charts, and CSV results
 ├── src/                        # Core Python modules (model, train, evaluate, gradcam)
@@ -95,7 +96,7 @@ TomatoClassification/
 - [x] Implementation of proper MobileNetV2 Preprocessing & Label Smoothing
 - [x] **Grad-CAM visualizations** (explainability module)
 - [x] **Severity estimation** regression module
-- [x] **Cross-dataset validation** (PlantDoc)
+- [ ] **Cross-dataset validation** (field dataset pending)
 - [x] **Fine-tuning on diverse data** (NPDD)
 
 ---

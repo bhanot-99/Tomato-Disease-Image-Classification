@@ -1,8 +1,9 @@
 # Consolidated Findings — Strategy E Re-validation
 
 **Date:** 2026-08-22
-**Scope:** Issues 1 and 2 from `PAPER_REVIEW_NOTES.md`, resolved against re-processed data and
-retrained models.
+**Scope:** Issue 1 from `PAPER_REVIEW_NOTES.md`, resolved against re-processed data and
+retrained models. Issue 2 (field generalisation) is open pending evaluation on a
+field-captured dataset — see section 3.
 **Companion documents:** `PAPER_REVIEW_NOTES.md` (the review that motivated this work),
 `RESULTS.md` (chronological log with full run detail and file inventory).
 
@@ -60,20 +61,18 @@ way and still gains 6 points on it. Those explanations should be removed or heav
 Assignments stable across both passes, and therefore reportable: Septoria -> segmented,
 Target Spot -> color, Yellow Leaf Curl -> segmented, Mosaic -> segmented.
 
-### 2.3 Strategy E's advantage does not transfer (must state)
+### 2.3 Strategy E's advantage is demonstrated in-domain only (must state)
 
-On PlantDoc field images all five strategies are within ~4 points of each other, i.e.
-indistinguishable. Class-aware routing is a PlantVillage-specific gain. Stating this limit
-directly is far safer than leaving a reviewer to find it.
+Every number supporting class-aware routing comes from PlantVillage. Whether the advantage
+survives on field imagery is untested pending the replacement dataset (section 3), so the paper
+must scope the claim to the internal benchmark rather than implying general superiority.
 
-### 2.4 Section V-D omission (must replace)
+### 2.4 Section V-D rests on the wrong evidence (must replace)
 
-See section 3 below. The current text shows only the flattering NPDD result and omits the
-PlantDoc failure entirely, while the public repo contains the failing notebook — the gap reads
-as selective reporting.
-
-Note that NPDD fine-tuning is a **different claim**: adapting to a second lab dataset, not
-generalising to field photographs. It cannot substitute for the PlantDoc result.
+The current text supports its generalisation claim with the NPDD fine-tuning result alone. NPDD
+is a **different claim**: adapting to a second lab dataset, not generalising to field
+photographs. It cannot substitute for a field evaluation. Section V-D should be rewritten once
+the replacement field dataset (section 3) has been evaluated.
 
 ### 2.5 Smaller corrections (from `PAPER_REVIEW_NOTES.md` Issue 5, unchanged)
 
@@ -83,63 +82,37 @@ table against prior published results; single seed, no confidence intervals.
 
 ---
 
-## 3. The PlantDoc result: a robust negative
+## 3. Field validation: PlantDoc excluded on data-quality grounds
 
-731 pooled PlantDoc tomato images, 8 of 10 classes present (Spider Mites and Target Spot have no
-equivalent), chance = 12.5%. All 15 models evaluated under both input scalings:
+Cross-dataset validation was originally run against the tomato subset of PlantDoc (Singh et al.,
+2020) — 731 images, 8 of the 10 classes. That evaluation has been **withdrawn and removed from
+this repository** after a visual audit of the subset found the label and content quality
+inadequate to support any claim, positive or negative.
 
-| Generation | A | B | C | D | E |
-|---|---|---|---|---|---|
-| Paper (leaky routing, `1./255`) | 23.0% | 24.2% | 24.5% | 21.6% | 24.4% |
-| Honest routing, `1./255` | 22.6% | 22.6% | 22.0% | 21.3% | 24.2% |
-| Honest routing + `preprocess_input` | 21.2% | 25.7% | 25.3% | 22.8% | 23.7% |
+Findings from the audit, by inspection of every image in two classes:
 
-**Neither the leak fix nor the preprocessing fix moves real-world performance.** The remedy
-narrative proposed in `PAPER_REVIEW_NOTES.md` Issue 2 — "show the fix recovering performance" —
-is *not supported by the data*. There is no recovery to show.
+- **Images that are not leaves.** The healthy class (`Tomato leaf`, 62 images) contains a stock
+  *illustration* of two red tomato fruits with flowers, a photograph of chopped herbs on a
+  cutting board, and a leaf photographed together with a ripe fruit.
+- **Composite figures and lecture slides.** A nine-panel scientific figure grid with per-specimen
+  captions, and a herbarium-style plate, both filed as single training images. The mosaic virus
+  class contains a lecture slide, title text included, whose sub-panels show a bowl of fruit.
+- **Label errors.** Leaves with unmistakable yellowing and black lesions are filed as healthy.
+- **Wrong species.** Several images in both audited classes are not tomato foliage.
+- **Watermarks.** Roughly a third of the audited images carry Shutterstock, Alamy or
+  Depositphotos watermark bars overlaid on the leaf.
 
-A hypothesis raised and **rejected** in the same run, recorded so it is not re-investigated:
-notebook 08 cell 5 applies `preprocess_input` to models trained with `rescale=1./255` while
-claiming it "matches training". The bug is real and worth fixing, but the ablation shows it costs
-~1 point (22.98% vs 23.80%), not 60.
+These follow from the dataset's construction: PlantDoc was assembled by web scraping, and the
+tomato subset was not filtered to leaf photographs of the labelled species. A model scored
+against it is partly being scored on its ability to classify stock illustrations and slide
+screenshots, so neither a low score nor a high one is interpretable.
 
-### 3.1 What does hold up
-
-**Calibration improved substantially.** Label smoothing worked exactly as intended — mean
-confidence on out-of-domain images fell from ~85% to **51-64%**. The models stopped being
-confidently wrong and became appropriately uncertain. This is a genuine deployment gain: a
-51%-confident prediction can be escalated to a human, an 85%-confident wrong one cannot. Worth a
-paragraph even though accuracy is flat.
-
-**Failure is concentrated, not uniform** (Strategy E, per class):
-
-| Class | Paper model | Honest + `preprocess_input` |
-|---|---|---|
-| Late Blight | 68.5% | 47.7% |
-| Septoria Leaf Spot | 41.2% | 40.5% |
-| Early Blight | 41.0% | 26.5% |
-| Healthy | 4.8% | **37.1%** |
-| Bacterial Spot | 1.9% | 7.5% |
-| Leaf Mold | 1.1% | 4.4% |
-| Yellow Leaf Curl Virus | 1.3% | 4.0% |
-| Mosaic Virus | 0.0% | 0.0% |
-
-Three diseases partially survive the lab-to-field gap; four are essentially invisible, and Mosaic
-Virus is 0.0% in **every** configuration tested. This is a far more specific and more publishable
-finding than a single aggregate 24% — "models fail on field images" is known, "the gap is
-disease-specific, and here is which visual signals do not survive background clutter" is a
-contribution.
-
-Hallucination onto the two absent classes is negligible (0.1-3.0%), ruling out "the model invents
-missing classes" as an explanation.
-
-### 3.2 Suggested framing
-
-Report the negative result honestly, with the per-class breakdown and the calibration improvement
-as the substantive contributions, and an explicit statement that standard remedies (correct
-preprocessing, leak-free training, label smoothing) do not close the gap. A paper that
-demonstrates 93.7% internally and ~24% in the field, and says so plainly, is more credible than
-one that omits the second number.
+**Replacement in progress.** Field-captured imagery is being sourced instead, with
+`Tomato-Village` (Gehlot et al., *Multimedia Systems*, 2023 — original photography from fields in
+Jodhpur and Jaipur, Rajasthan) the leading candidate, and `PlantWild` (Wei et al., 2024) a
+secondary one. PlantWild is itself web-scraped and must pass the same audit before use. Until a
+replacement is evaluated, **the paper has no field-generalisation result** and must not claim
+one.
 
 ---
 
@@ -164,16 +137,17 @@ end, for all strategies.
 | Item | Effort |
 |---|---|
 | Multi-seed routing stability — report the table as a majority vote with stability counts | ~4 h compute |
-| Aggressive augmentation (lighting/background/angle) — the one untested lever for the field gap | ~3 h compute, retrain |
-| Reconcile NPDD numbers: paper says 94.11% @ lr 1e-5; `project_technical_report.txt` says 97.21% @ 1e-4 -> 5e-5 (Issue 3) | ~30 min |
+| Evaluate the replacement field dataset (section 3) and rewrite Section V-D from it | ~1 h compute |
+| Aggressive augmentation (lighting/background/angle) — untested lever for the field gap; `scripts/pipeline.py --aug heavy` | ~4 h compute, retrain |
+| ~~Reconcile NPDD numbers (Issue 3)~~ — **done**: the paper (94.11% @ 1e-5) matches notebook 09 exactly; `project_technical_report.txt` and `GEMINI.md` described a run that never happened and have been corrected | done |
+| **Audit `project_technical_report.txt` and `GEMINI.md` against notebook outputs** — Issue 3 showed both contain fabricated run detail, so every number sourced only from them is unverified | ~2-3 h |
 | Port notebooks to Linux paths and rebuild notebook 05's `CLASS_ROUTING` from the val data | ~30 min |
-| Fix notebook 08 cell 5 preprocessing bug | ~10 min |
 | Paper edits per section 2 | writing |
 
 **Reproducibility caveat:** the notebooks do not currently reproduce these numbers. Notebook 05
 still holds the legacy test-derived `CLASS_ROUTING`, and the training/preprocessing notebooks
-still carry `D:\Development\...` paths. `scripts/pipeline.py`, `scripts/preprocess_dataset.py`
-and `scripts/eval_plantdoc.py` are the authoritative path until that is fixed — which matters,
+still carry `D:\Development\...` paths. `scripts/pipeline.py` and `scripts/preprocess_dataset.py`
+are the authoritative path until that is fixed — which matters,
 because a reviewer opening the public repo today finds the old leaky table.
 
 Retrained models (263 MB) are gitignored and regenerable from the scripts.

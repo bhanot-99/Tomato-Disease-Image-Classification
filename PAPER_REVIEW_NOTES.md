@@ -32,7 +32,7 @@ The per-class accuracy numbers used to *decide* the Strategy E routing (Table I:
 
 **This is already flagged inside the repo's own notebooks.** A comment block in `01_evaluation_color.ipynb`, `02_evaluation_segmented.ipynb`, and `05_model_training_selective.ipynb` explicitly says:
 
-> "The per-class numbers used to build CLASS_ROUTING in 05_model_training_selective.ipynb were taken from the TEST set evaluation above... a data leak that inflates Strategy E's reported performance, and a likely reason Strategy E generalised the WORST to PlantDoc despite having the BEST internal test score."
+> "The per-class numbers used to build CLASS_ROUTING in 05_model_training_selective.ipynb were taken from the TEST set evaluation above... a data leak that inflates Strategy E's reported performance, and a likely reason Strategy E generalised the WORST to field imagery despite having the BEST internal test score."
 
 A partial fix already exists (cells that compute per-class accuracy on the **validation** split instead, exporting to JSON at `outputs/routing_analysis/strategy_{A,B,C}_val_per_class.json`), but:
 - Those JSON files do not currently exist anywhere in the repo (never generated — the val-set cells were never run).
@@ -41,28 +41,77 @@ A partial fix already exists (cells that compute per-class accuracy on the **val
 
 **Fix:** Run the validation-set evaluation cells in notebooks 01/02/03, generate the JSON files, rebuild `CLASS_ROUTING` from validation data in notebook 05, retrain Strategy E, and report the honest (leak-free) test accuracy.
 
-### Issue 2 — The paper hides its most interesting finding (PlantDoc domain-shift failure)
-Cross-dataset validation (`08_cross_dataset_validation_plantdoc.ipynb`) shows **all 5 strategies score only ~22–25% on real-world PlantDoc field images** — barely above the 12.5% random-chance baseline for 8 classes:
+### Issue 2 — The paper claims generalization it has not measured
+Section V-D ("Generalization Validation") supports its real-world claim with the NPDD fine-tuning
+result alone. NPDD is a second *lab* dataset, so it evidences domain adaptation, not field
+generalization. As it stands the section implies a capability the experiments do not establish.
 
-| Strategy | Internal (PlantVillage) | PlantDoc (real-world) | Gap |
+Cross-dataset validation was previously run against PlantDoc, but that evaluation has been
+**withdrawn and removed from this repository**: an image-level audit found the tomato subset
+contains fruit-only stock illustrations, composite figures and lecture slides, watermarked stock
+photography, wrong-species images, and diseased leaves labelled healthy. Scores against it are not
+interpretable in either direction. The audit findings are recorded in `FINDINGS.md` section 3.
+
+**Fix:** evaluate on a field-captured dataset with reliable labels and rewrite Section V-D from
+that result, whatever it says. Until then the paper must scope its generalization claim to
+lab-to-lab adaptation. Candidate replacement datasets and their own quality caveats are tracked in
+`FINDINGS.md` section 3.
+
+### Issue 3 — RESOLVED (2026-08-22): the paper was right, the internal docs were fabricated
+
+This issue was originally filed as "the paper's numbers don't match the project's own
+records," on the assumption that `project_technical_report.txt` and `GEMINI.md` were
+run logs. They are not. Adjudicated against the saved cell outputs of
+`notebooks/09_finetune_and_test_new_plant_diseases.ipynb` and the artifacts in
+`outputs/npdd_validation/`:
+
+| | Notebook 09 (authoritative) | Paper §V-D | Internal docs (as filed) |
 |---|---|---|---|
-| A | 89.06% | 22.98% | −66.1% |
-| B | 86.13% | 24.21% | −61.9% |
-| C | 87.48% | 24.49% | −63.0% |
-| D | 88.42% | 21.61% | −66.8% |
-| E | 93.88% | 24.35% | −69.5% (**largest gap of all 5**) |
+| Learning rate | `1.0000e-05`, all 10 epochs | α=1×10⁻⁵ ✓ | 1e-4 → 5e-5 ✗ |
+| Best val accuracy | 0.9411 | 94.11% ✓ | 97.21% ✗ |
+| Delta vs 93.88% | +0.23% (printed) | +0.23% ✓ | +3.33% ✗ |
+| Epochs | max 10, ran 10, EarlyStopping never fired | — | 14, stopped at 14 ✗ |
+| Val trajectory | 81.16 → 87.00 → 87.63 → … → 94.11 | — | 90.95 → 93.13 → 91.84 → … ✗ |
+| NPDD test (16 img) | 16/16, avg conf 75.54% | not cited | 15/16 = 93.75% ✗ |
 
-The paper's Section V-D ("Generalization Validation") omits this entirely and shows only the flattering NPDD fine-tuning result. If a reviewer checks the public repo (which contains the PlantDoc notebook, root-cause analysis, and fix), the gap between what the paper implies and what the code shows reads as selective reporting / cherry-picking — more damaging to credibility than the low number itself.
+**The paper matches the notebook on every checkable detail and needs no correction.**
+§V-D never cites the 16-image test result, so nothing there needs fixing either.
 
-**Fix — reframe as a strength, not a hidden weakness:** report the PlantDoc failure honestly, walk through the root-cause analysis already done in `project_technical_report.txt` (wrong MobileNetV2 preprocessing, insufficient augmentation for lighting/background variation, overconfident loss function), then show the fix (proper `preprocess_input`, label smoothing, NPDD fine-tuning) recovering performance. "Found a real failure → diagnosed it → fixed it" is a stronger, more publishable narrative than "everything worked."
+The internal documents instead contain a detailed but unsupported account of a run
+that does not exist: a fabricated 14-epoch table, a "system pause ~7hrs" at epoch 13,
+and a causal explanation ("the jump from 95.27% to 97.21% happened exactly when
+ReduceLROnPlateau halved the LR") for an event with no basis in the log. The test-set
+claim is refuted directly by `test_predictions_NPDD.csv`, which records
+`TomatoEarlyBlight2.JPG` as Early Blight at 89.22% confidence (Septoria probability
+2.01%) — not a miss at 52%. Every per-image confidence in that table differed from the
+CSV. Per-class validation F1s differed too (98.5/96.7/97.8… vs the notebook's
+95.0/91.9/94.9…).
 
-### Issue 3 — Paper's numbers don't match the project's own records
-- **Paper (Section V-D):** NPDD fine-tuning achieved 94.11% validation accuracy, learning rate 1e-5, unfroze top 30 layers.
-- **`project_technical_report.txt` / `GEMINI.md` (actual run logs):** NPDD fine-tuning achieved **97.21%** validation accuracy, learning rate started at 1e-4 and was halved to 5e-5 via `ReduceLROnPlateau`, same 30-layer unfreezing.
+Given the filename, the most likely origin is that `GEMINI.md` is an LLM-written
+summary that hallucinated plausible training details, which `project_technical_report.txt`
+then inherited.
 
-These cannot both be correct. Any reviewer cross-checking code against paper will find this, and a single confirmed mismatch undermines trust in every other number in the paper.
+**Done:** §6/7/8 of `project_technical_report.txt` and the NPDD section of `GEMINI.md`
+corrected to the notebook's figures, each with an inline CORRECTION note.
 
-**Fix:** Reconcile — determine which run is authoritative (re-run notebook 09 if needed) and correct the paper to match the actual notebook output.
+**Consequence — audited, see `DOC_AUDIT.md`:** both documents were checked in full against
+the saved outputs of all 22 notebooks (plus notebook 08 recovered from `f741b5b`). The NPDD
+section turned out to be the **only** fabricated region: 162 of 168 percentage claims are
+corroborated exactly, all six orphans are benign, and every dataset count checks out except
+`1,790` (NPDD Mosaic Virus, never printed anywhere). Strategies A-D and Table I transcribe
+exactly.
+
+One structural gap did surface: **93.88% — the paper's headline — has no notebook
+provenance.** Notebook 05's recorded run failed on all 30 source paths and printed success
+anyway; there is no Strategy E evaluation notebook; and `93.88` appears only in notebooks 08
+and 09, which consume it as a baseline. The number is independently substantiated by the
+leak-free re-runs (93.28% / 93.71%) and the model files on disk — so this is a
+reproducibility problem, not a correctness one.
+
+Caveat: a second, later NPDD run whose notebook was never saved cannot be formally
+excluded. Against it — notebook 09 is the only one, and the CSV artifact on disk matches
+it exactly while contradicting the docs; a later run would have overwritten that CSV.
+NPDD is not on disk (~2.7 GB), so a re-run is not currently possible.
 
 ### Issue 4 — All reported models used the wrong preprocessing
 Root-cause analysis (already done, in `project_technical_report.txt` Section 3) found every training notebook used `rescale=1./255` (maps pixels to [0,1]), but MobileNetV2 was pretrained expecting `preprocess_input()` (maps pixels to [-1,1]). This is invisible on the internal benchmark (test set uses the same wrong scaling) but degrades feature quality, and is part of why cross-dataset performance collapsed. The fix (`preprocess_input` + label smoothing 0.1) is already written into `scripts/patch_notebooks.py` and applied to the notebooks, but the `.h5` models the paper reports on were **not retrained** with the fix — meaning 93.88% may not even be the true ceiling of the architecture.
@@ -86,9 +135,9 @@ Root-cause analysis (already done, in `project_technical_report.txt` Section 3) 
 **Tier 1 — highest score impact, mostly finishing work already started in the repo:**
 1. Close the routing data leak: run the validation-set evaluation cells (01/02/03), generate the missing JSON files, rebuild `CLASS_ROUTING` in notebook 05 from validation data, retrain Strategy E, report the honest number.
 2. Retrain Strategies A–E using the already-patched notebooks (`preprocess_input` + label smoothing) so all headline numbers reflect correct MobileNetV2 preprocessing.
-3. Re-run notebook 08 (PlantDoc) after retraining to measure real improvement from the fixes.
-4. Reconcile the NPDD fine-tuning numbers in the paper (94.11%/1e-5) against the actual notebook/report output (97.21%/1e-4→5e-5).
-5. Fold the honest PlantDoc failure → root-cause → fix narrative into the paper instead of omitting it.
+3. Evaluate a field-captured dataset after retraining to measure real-world generalization.
+4. ~~Reconcile the NPDD fine-tuning numbers~~ — **done 2026-08-22**; paper was correct, internal docs corrected. Replaced by: audit `project_technical_report.txt` and `GEMINI.md` in full against notebook outputs (see Issue 3).
+5. Rewrite Section V-D from the field result once measured, and state the limitation plainly if the gap persists.
 
 **Tier 2 — writing/polish fixes, low effort:**
 6. Add an explicit Limitations section.
